@@ -18,4 +18,5 @@ Answer the following questions
 - Show examples of some erroneous predictions. Can you understand where the error is coming from?
 - Do some more analysis to better understand how your model behaves.
 
-# Ideas to try
+# Ideas to try / references
+https://medium.com/tech-tavern/nlp-exercise-text-difficulty-prediction-with-ai-ccefe99daa65
