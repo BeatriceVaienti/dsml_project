@@ -22,3 +22,4 @@ Answer the following questions
 https://medium.com/tech-tavern/nlp-exercise-text-difficulty-prediction-with-ai-ccefe99daa65
 
 
+# CamemBERT/FlauBERT model
