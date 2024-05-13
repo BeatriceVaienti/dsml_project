@@ -39,15 +39,18 @@ def calculate_pos_frequencies(pos_counts, top_tags):
 
 def add_pos_frequencies(df):
     df = df.copy()  # Avoid modifying the input DataFrame
-    tokens = df['tokens']
+    tokens_lists = df['tokens']
+
     total_tag_counts = defaultdict(int)
-    for token in tokens:
-        if token.pos_ not in {'SPACE'}:
-            total_tag_counts[token.pos_] += 1
+    for tokens in tokens_lists:
+        for token in tokens:
+            if token.pos_ not in {'SPACE'}:
+                total_tag_counts[token.pos_] += 1
     top_tags = sorted(total_tag_counts.items(), key=lambda x: x[1], reverse=True)[:5]
     top_tags = [tag for tag, _ in top_tags]
     df['pos_frequencies'] = df['pos_counts'].apply(lambda x: calculate_pos_frequencies(x, top_tags))
-
+    for tag, i in zip(top_tags, range(len(top_tags))):
+        df['tag_'+str(i)] = df['pos_frequencies'].apply(lambda x: x.get(tag, 0))
     return df
 
 def augment_df(df):
