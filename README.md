@@ -65,6 +65,16 @@ The model used for CamemBERT is the `camembert-base` model.
 
 | Learning Rate | Batch Size | Epochs | Validation Accuracy |
 |---------------|------------|--------|---------------------|
+|     1e-05     |     16     |   8    | 0.48125             |
+|     1e-05     |     16     |   16   | 0.4864583333333333  |
+
+
+
+##### Flaubert
+The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
+
+| Learning Rate | Batch Size | Epochs | Validation Accuracy |
+|---------------|------------|--------|---------------------|
 |     1e-05     |     16     |   2    | 0.4239583333333333  |
 |     1e-05     |     16     |   4    | 0.4822916666666667  |
 |     1e-05     |     16     |   8    | 0.4708333333333333  |
@@ -79,17 +89,6 @@ The model used for CamemBERT is the `camembert-base` model.
 |     1e-05     |     64     |   16   | 0.48854166666666665 |
 |     5e-05     |     16     |   2    | 0.44895833333333335 |
 |     5e-05     |     16     |   4    | 0.47604166666666664 |
-
-
-
-
-
-##### Flaubert
-The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
-
-| Learning Rate | Batch Size | Epochs | Validation Accuracy |
-|---------------|------------|--------|---------------------|
-| Placeholder   | Placeholder| Placeholder | Placeholder      |
 
 
 In the following table, we summarize the best validation accuracy achieved for each model with the best hyperparameters found.
