@@ -61,11 +61,15 @@ The best hyperparameters discovered during the tuning process are detailed in th
 #### Hyperparameter Tuning Log
 The log file contains the validation accuracy for each combination of hyperparameters tested during the tuning process. The best hyperparameters are selected based on the highest validation accuracy achieved. In the following table, we show the accuracy obtained for each combination of hyperparameters tested and for each model.
 ##### CamemBERT
+The model used for CamemBERT is the `camembert-base` model. 
+
 | Learning Rate | Batch Size | Epochs | Validation Accuracy |
 |---------------|------------|--------|---------------------|
 | Placeholder   | Placeholder| Placeholder | Placeholder      |
 
 ##### Flaubert
+The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
+
 | Learning Rate | Batch Size | Epochs | Validation Accuracy |
 |---------------|------------|--------|---------------------|
 | Placeholder   | Placeholder| Placeholder | Placeholder      |

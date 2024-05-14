@@ -17,15 +17,28 @@ def get_arguments():
     return parser.parse_args()
 
 def prepare_full_data(df, tokenizer, max_len, batch_size=32):
+    df = df.copy()
+    df = drop_missing_remove_duplicates(df)
     text = df['sentence'].to_list()
     labels = get_encoded_y(df).tolist()
-    input_ids = [tokenizer.encode(sent, add_special_tokens=True, max_length=max_len, truncation=True) for sent in text]
-    input_ids = pad_sequences(input_ids, maxlen=max_len, dtype="long", truncating="post", padding="post")
-    attention_masks = [[float(i > 0) for i in seq] for seq in input_ids]
-
+    
+    # Use tokenizer's batch_encode_plus to handle tokenization, padding, and attention mask creation
+    encoded_dict = tokenizer.batch_encode_plus(
+        text,  # Batch of text to encode.
+        add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
+        max_length=max_len,  # Pad & truncate all sentences.
+        padding='max_length',  # Pad all to max_length.
+        truncation=True,  # Explicitly truncate to max_length.
+        return_attention_mask=True,  # Include attention masks.
+        return_tensors='pt'  # Return pytorch tensors.
+    )
+    input_ids = encoded_dict['input_ids']  
+    attention_masks = encoded_dict['attention_mask']
     # Convert to tensors
-    inputs = torch.tensor(input_ids)
-    masks = torch.tensor(attention_masks)
+
+    # se funziona quello prima elimina questo:
+    inputs = input_ids.clone().detach()
+    masks = attention_masks.clone().detach()
     labels = torch.tensor(labels)
 
     data = TensorDataset(inputs, masks, labels)
@@ -51,24 +64,24 @@ def train(model, dataloader, optimizer, device):
 if __name__ == "__main__":
     args = get_arguments()
     model_choice = args.model
-    batch_size = 16
+    batch_size = 4
     lr = 1e-5
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     if model_choice == 'camembert':
-        tokenizer = CamembertTokenizer.from_pretrained('camembert-base', do_lower_case=True)
+        tokenizer = CamembertTokenizer.from_pretrained('camembert-base', do_lower_case=False)
     else:
-        tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_base_cased', do_lower_case=True)
+        tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_small_cased', do_lower_case=False)
     
     max_len = 128
     df = pd.read_csv('./training/training_data.csv')
-    df = drop_missing_remove_duplicates(df)
+    
     full_dataloader = prepare_full_data(df, tokenizer, max_len, batch_size)
     
     model = initialize_model(num_labels=6, device=device, model_choice=model_choice)
     optimizer = get_optimizer(model, lr)
     
-    epochs = 5
+    epochs = 2
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}")
         train_loss = train(model, full_dataloader, optimizer, device)

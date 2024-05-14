@@ -26,19 +26,29 @@ def load_model(model_choice):
     model = AutoModelForSequenceClassification.from_pretrained(model_path)
     return model, tokenizer
 
-def prepare_inference_data(sentences, tokenizer, max_len):
-    input_ids = [tokenizer.encode(sent, add_special_tokens=True, max_length=max_len, truncation=True) for sent in sentences]
-    input_ids = pad_sequences(input_ids, maxlen=max_len, dtype="long", truncating="post", padding="post")
-    attention_masks = [[float(i > 0) for i in seq] for seq in input_ids]
+def prepare_inference_data(sentences, tokenizer, max_len, batch_size=32):
+
+    # Use tokenizer's batch_encode_plus to handle tokenization, padding, and attention mask creation
+    encoded_dict = tokenizer.batch_encode_plus(
+        sentences,  # Batch of text to encode.
+        add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
+        max_length=max_len,  # Pad & truncate all sentences.
+        padding='max_length',  # Pad all to max_length.
+        truncation=True,  # Explicitly truncate to max_length.
+        return_attention_mask=True,  # Include attention masks.
+        return_tensors='pt'  # Return pytorch tensors.
+    )
+    input_ids = encoded_dict['input_ids']  
+    attention_masks = encoded_dict['attention_mask']
 
     # Convert to tensors
-    inputs = torch.tensor(input_ids)
-    masks = torch.tensor(attention_masks)
+    inputs = input_ids.clone().detach()
+    masks = attention_masks.clone().detach()
 
     data = TensorDataset(inputs, masks)
-    dataloader = DataLoader(data, sampler=SequentialSampler(data), batch_size=32)
+    dataloader = DataLoader(data, sampler=SequentialSampler(data), batch_size=batch_size)
     return dataloader
-
+import numpy as np
 def predict(model, dataloader, device):
     model.eval()
     model.to(device)
@@ -51,22 +61,22 @@ def predict(model, dataloader, device):
             outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
             logits = outputs[0]
         logits = logits.detach().cpu().numpy()
-        predictions.append(logits)
-    
-    # Convert logits to class predictions
-    predictions = [list(p.argmax(axis=1)) for p in predictions]
-    return [pred for sublist in predictions for pred in sublist]  # Flatten list
+        # Convert logits to class predictions
+        preds = np.argmax(logits, axis=1)
+        predictions.extend(preds)
+    return predictions  # Flatten list
 
 if __name__ == "__main__":
     args = get_arguments()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
     model, tokenizer = load_model(args.model)
-    
+    #get the batch size from the model
+    batch_size = 4
     inference = pd.read_csv('./test/unlabelled_test_data.csv')
     sentences = inference['sentence'].tolist()
     max_len = 128
-    inference_dataloader = prepare_inference_data(sentences, tokenizer, max_len)
+    inference_dataloader = prepare_inference_data(sentences, tokenizer, max_len, batch_size=batch_size)
     
     predictions = predict(model, inference_dataloader, device)
 

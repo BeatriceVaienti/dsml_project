@@ -10,7 +10,7 @@ def initialize_model(num_labels, device, model_choice):
         config = CamembertConfig.from_pretrained('camembert-base', num_labels=num_labels)
         model = CamembertForSequenceClassification(config)
     elif model_choice == 'flaubert':
-        config = FlaubertConfig.from_pretrained('flaubert/flaubert_base_cased', num_labels=num_labels)
+        config = FlaubertConfig.from_pretrained('flaubert/flaubert_small_cased', num_labels=num_labels)
         model = FlaubertForSequenceClassification(config)
     else:
         raise ValueError("Invalid model choice. Choose 'camembert' or 'flaubert'.")
