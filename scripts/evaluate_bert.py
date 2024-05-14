@@ -126,7 +126,7 @@ def perform_hyperparameter_search(df, tokenizer, device, model_choice):
     all_combinations = list(product(learning_rates, batch_sizes, epoch_lengths))
 
     for lr, batch_size, epochs in tqdm(all_combinations, desc='Hyperparameter Search Progress'):
-        train_dataloader, validation_dataloader = create_dataloaders(*load_and_prepare_data(df, tokenizer, 128), batch_size)
+        train_dataloader, validation_dataloader = create_dataloaders(*load_and_prepare_data(df, tokenizer, max_len=264), batch_size)
         model = initialize_model(6, device, model_choice)  # Dynamically initialize the model
         optimizer = get_optimizer(model, lr)
 

@@ -72,10 +72,10 @@ if __name__ == "__main__":
     
     model, tokenizer = load_model(args.model)
     #get the batch size from the model
-    batch_size = 4
+    batch_size = 8
     inference = pd.read_csv('./test/unlabelled_test_data.csv')
     sentences = inference['sentence'].tolist()
-    max_len = 128
+    max_len = 264
     inference_dataloader = prepare_inference_data(sentences, tokenizer, max_len, batch_size=batch_size)
     
     predictions = predict(model, inference_dataloader, device)

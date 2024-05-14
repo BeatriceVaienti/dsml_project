@@ -64,16 +64,16 @@ def train(model, dataloader, optimizer, device):
 if __name__ == "__main__":
     args = get_arguments()
     model_choice = args.model
-    batch_size = 4
+    batch_size = 8
     lr = 1e-5
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     if model_choice == 'camembert':
         tokenizer = CamembertTokenizer.from_pretrained('camembert-base', do_lower_case=False)
     else:
-        tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_small_cased', do_lower_case=False)
+        tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_base_cased', do_lower_case=False)
     
-    max_len = 128
+    max_len = 264
     df = pd.read_csv('./training/training_data.csv')
     
     full_dataloader = prepare_full_data(df, tokenizer, max_len, batch_size)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     model = initialize_model(num_labels=6, device=device, model_choice=model_choice)
     optimizer = get_optimizer(model, lr)
     
-    epochs = 2
+    epochs = 16
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}")
         train_loss = train(model, full_dataloader, optimizer, device)
