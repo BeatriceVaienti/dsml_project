@@ -1,5 +1,5 @@
 # predict_combined.py
-
+import os
 import sys
 sys.path.append('./')
 import pandas as pd
@@ -7,11 +7,13 @@ import torch
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
-from transformers import CamembertTokenizer, CamembertForSequenceClassification
+from transformers import CamembertTokenizer, CamembertForSequenceClassification, CamembertConfig
 from models.model_combined import CamembertWithFeatures
 from utils.label_encoding import get_label_encoder
 import argparse
 import joblib  # For loading the scaler
+from utils.data_augmentation import augment_df  # Ensure this is imported for augmentation
+
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Predict CEFR levels using a trained model with additional features.')
@@ -22,7 +24,9 @@ def load_model_with_features(model_choice, feature_dim):
     if model_choice == 'camembert':
         model_path = './models_saved/camembert_full_with_features'
         tokenizer = CamembertTokenizer.from_pretrained(model_path)
+        config = CamembertConfig.from_pretrained(model_path)
         model = CamembertWithFeatures(num_labels=6, feature_dim=feature_dim, model_path=model_path)
+        model.load_state_dict(torch.load(os.path.join(model_path, 'pytorch_model.bin'), map_location=torch.device('cpu')))
     return model, tokenizer
 
 def prepare_inference_data(sentences, features, tokenizer, scaler, max_len, batch_size=32):
@@ -56,7 +60,7 @@ def predict(model, dataloader, device):
         b_input_ids, b_input_mask, b_features = batch
         with torch.no_grad():
             outputs = model(b_input_ids, b_input_mask, b_features)
-            logits = outputs[0]
+            logits = outputs
         logits = logits.detach().cpu().numpy()
         preds = np.argmax(logits, axis=1)
         predictions.extend(preds)
@@ -74,7 +78,10 @@ if __name__ == "__main__":
     scaler = joblib.load('./models_saved/scaler.pkl')
 
     inference = pd.read_csv('./test/unlabelled_test_data.csv')
+    inference = augment_df(inference)  # Apply the augmentation function to compute features
+
     sentences = inference['sentence'].tolist()
+    
     features = inference[['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']].values
     max_len = 264
     inference_dataloader = prepare_inference_data(sentences, features, tokenizer, scaler, max_len, batch_size=batch_size)
@@ -83,7 +90,6 @@ if __name__ == "__main__":
 
     encoder = get_label_encoder()
     decoded_predictions = encoder.inverse_transform(predictions)
-
-    inference['difficulty'] = decoded_predictions
-    inference = inference.drop(columns='sentence')
-    inference.to_csv(f'./kaggle_submissions/predictions_{args.model}_with_features.csv', index=False)
+    inference_sub = inference[['id']]
+    inference_sub['difficulty'] = decoded_predictions
+    inference_sub.to_csv(f'./kaggle_submissions/predictions_{args.model}_with_features.csv', index=False)

@@ -81,7 +81,7 @@ if __name__ == "__main__":
     model = initialize_model(num_labels=6, device=device, model_choice=model_choice)
     optimizer = get_optimizer(model, lr)
     
-    epochs = 16
+    epochs = 1
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}")
         train_loss = train(model, full_dataloader, optimizer, device)
