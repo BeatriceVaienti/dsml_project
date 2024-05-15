@@ -12,7 +12,7 @@ from utils.data_augmentation import augment_df
 from utils.embeddings_generation import generate_embeddings
 from utils.label_encoding import get_encoded_y
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
-from transformers import CamembertTokenizer, CamembertForSequenceClassification
+from transformers import CamembertTokenizer, CamembertConfig
 from torch.optim import AdamW
 from models.model_combined import CamembertWithFeatures
 import argparse
@@ -77,7 +77,7 @@ def train(model, dataloader, optimizer, device):
 if __name__ == "__main__":
     args = get_arguments()
     model_choice = args.model
-    batch_size = 4
+    batch_size = 64
     lr = 5e-5
     feature_dim = 7  # Number of additional features
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -123,11 +123,21 @@ if __name__ == "__main__":
     model = CamembertWithFeatures(num_labels=6, feature_dim=feature_dim, model_path=model_path).to(device)
     optimizer = AdamW(model.parameters(), lr=lr)
 
-    epochs = 2
+    epochs = 1
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}")
         train_loss = train(model, full_dataloader, optimizer, device)
         print(f"Epoch {epoch + 1}, Train Loss: {train_loss}")
+        
+    # Save the model and tokenizer
 
-    model.save_pretrained(f'./models_saved/{model_choice}_full_with_features')
-    tokenizer.save_pretrained(f'./models_saved/{model_choice}_full_with_features')
+    model_save_path = f'./models_saved/{model_choice}_full_with_features'
+    os.makedirs(model_save_path, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(model_save_path, 'pytorch_model.bin'))
+    tokenizer.save_pretrained(model_save_path)
+    
+    # Save the configuration
+    config = CamembertConfig.from_pretrained(model_path)
+    config.save_pretrained(model_save_path)
+    
+    print(f"Model, tokenizer, and config saved to {model_save_path}")

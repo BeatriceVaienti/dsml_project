@@ -8,24 +8,19 @@ import numpy as np
 import torch
 from utils.data_processing import drop_missing_remove_duplicates
 from utils.label_encoding import get_encoded_y
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers import CamembertTokenizer, CamembertForSequenceClassification, FlaubertTokenizer, FlaubertForSequenceClassification
 
-from torch.optim import AdamW
-from utils.data_loader import load_and_prepare_data, create_dataloaders
-from models.model_camembert import initialize_model, get_optimizer
+from models.model_bert import initialize_model, get_optimizer
 import json
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix, accuracy_score
-from models.model_bert import initialize_model, get_optimizer
 import argparse
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Train a model to predict CEFR levels of French sentences.')
     parser.add_argument('--model', type=str, choices=['camembert', 'flaubert'], required=True, help='Choose the model to use: camembert or flaubert')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 def flat_accuracy(preds, labels):
     pred_flat = np.argmax(preds, axis=1).flatten()
@@ -35,7 +30,7 @@ def flat_accuracy(preds, labels):
 def train(model, train_dataloader, optimizer, device):
     model.train()
     total_loss = 0
-    for step, batch in enumerate(train_dataloader):
+    for step, batch in tqdm(enumerate(train_dataloader), desc="Training", total=len(train_dataloader)):
         batch = tuple(t.to(device) for t in batch)
         b_input_ids, b_input_mask, b_labels = batch
         optimizer.zero_grad()
@@ -50,6 +45,7 @@ def train(model, train_dataloader, optimizer, device):
 def evaluate(model, validation_dataloader, device):
     model.eval()
     eval_accuracy, nb_eval_steps = 0, 0
+    all_preds, all_labels = [], []
     for batch in validation_dataloader:
         batch = tuple(t.to(device) for t in batch)
         b_input_ids, b_input_mask, b_labels = batch
@@ -61,47 +57,28 @@ def evaluate(model, validation_dataloader, device):
         tmp_eval_accuracy = flat_accuracy(logits, label_ids)
         eval_accuracy += tmp_eval_accuracy
         nb_eval_steps += 1
-    return eval_accuracy / nb_eval_steps
+        preds = np.argmax(logits, axis=1)
+        all_preds.extend(preds)
+        all_labels.extend(label_ids)
+
+    avg_accuracy = eval_accuracy / nb_eval_steps
+    return avg_accuracy, all_preds, all_labels
 
 def train_and_evaluate(model, train_dataloader, validation_dataloader, optimizer, device, epochs):
     model.to(device)
     best_metrics = {}
-    #show the progress with tqdm
     for epoch in trange(epochs, desc="Epoch"):
-        model.train()
-        for batch in train_dataloader:
-            batch = tuple(t.to(device) for t in batch)
-            b_input_ids, b_input_mask, b_labels = batch
-            optimizer.zero_grad()
-            outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
-            loss = outputs[0]
-            loss.backward()
-            optimizer.step()
+        train_loss = train(model, train_dataloader, optimizer, device)
+        avg_accuracy, all_preds, all_labels = evaluate(model, validation_dataloader, device)
 
-        # Validation phase
-        model.eval()
-        all_preds, all_labels = [], []
-        for batch in validation_dataloader:
-            batch = tuple(t.to(device) for t in batch)
-            b_input_ids, b_input_mask, b_labels = batch
-            with torch.no_grad():
-                outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
-                logits = outputs[0]
-            logits = logits.detach().cpu().numpy()
-            label_ids = b_labels.to('cpu').numpy()
-            preds = np.argmax(logits, axis=1)
-            all_preds.extend(preds)
-            all_labels.extend(label_ids)
-
-        accuracy = accuracy_score(all_labels, all_preds)
-        if accuracy > best_metrics.get('accuracy', 0):
+        if avg_accuracy > best_metrics.get('accuracy', 0):
             precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
             conf_matrix = confusion_matrix(all_labels, all_preds)
             best_metrics = {
                 'precision': precision,
                 'recall': recall,
                 'f1': f1,
-                'accuracy': accuracy,
+                'accuracy': avg_accuracy,
                 'confusion_matrix': conf_matrix.tolist()  # Convert numpy array to list for JSON serialization
             }
 
@@ -116,17 +93,59 @@ def save_hyperparameters(hyperparameters, metrics, file_path):
         json.dump(data, file)
     print(f"Saved best hyperparameters and evaluation metrics to {file_path}")
 
-def perform_hyperparameter_search(df, tokenizer, device, model_choice):
+def prepare_data(df, tokenizer, max_len):
+    text = df['sentence'].to_list()
+    labels = get_encoded_y(df).tolist()
+
+    encoded_dict = tokenizer.batch_encode_plus(
+        text,
+        add_special_tokens=True,
+        max_length=max_len,
+        padding='max_length',
+        truncation=True,
+        return_attention_mask=True,
+        return_tensors='pt'
+    )
+    input_ids = encoded_dict['input_ids']
+    attention_masks = encoded_dict['attention_mask']
+
+    inputs = input_ids.clone().detach()
+    masks = attention_masks.clone().detach()
+    labels = torch.tensor(labels)
+
+    return inputs, masks, labels
+
+def create_dataloaders(train_inputs, validation_inputs, test_inputs, train_masks, validation_masks, test_masks, train_labels, validation_labels, test_labels, batch_size):
+    train_data = TensorDataset(train_inputs, train_masks, train_labels)
+    train_sampler = RandomSampler(train_data)
+    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=batch_size, pin_memory=True)
+
+    validation_data = TensorDataset(validation_inputs, validation_masks, validation_labels)
+    validation_sampler = SequentialSampler(validation_data)
+    validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size, pin_memory=True)
+
+    test_data = TensorDataset(test_inputs, test_masks, test_labels)
+    test_sampler = SequentialSampler(test_data)
+    test_dataloader = DataLoader(test_data, sampler=test_sampler, batch_size=batch_size, pin_memory=True)
+
+    return train_dataloader, validation_dataloader, test_dataloader
+
+
+def perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_choice):
     learning_rates = [1e-5, 5e-5, 1e-4]
-    batch_sizes = [16, 32, 64]
-    epoch_lengths = [2, 4, 8, 16]
+    batch_sizes = [16, 64, 128]
+    epoch_lengths = [16]
     best_metrics = {'accuracy': 0}  # Initialize with low accuracy to ensure replacement
     best_params = {}
     log_file_path = f'./best_hyperparameters_saved/hyperparameter_log_{model_choice}.json'
     all_combinations = list(product(learning_rates, batch_sizes, epoch_lengths))
+    max_len = 264
+
+    train_inputs, train_masks, train_labels = prepare_data(train_df, tokenizer, max_len)
+    val_inputs, val_masks, val_labels = prepare_data(val_df, tokenizer, max_len)
 
     for lr, batch_size, epochs in tqdm(all_combinations, desc='Hyperparameter Search Progress'):
-        train_dataloader, validation_dataloader = create_dataloaders(*load_and_prepare_data(df, tokenizer, max_len=264), batch_size)
+        train_dataloader, validation_dataloader, _ = create_dataloaders(train_inputs, val_inputs, val_inputs, train_masks, val_masks, val_masks, train_labels, val_labels, val_labels, batch_size)
         model = initialize_model(6, device, model_choice)  # Dynamically initialize the model
         optimizer = get_optimizer(model, lr)
 
@@ -170,6 +189,41 @@ if __name__ == "__main__":
         tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_base_cased', do_lower_case=True)
 
     df = pd.read_csv('./training/training_data.csv')
-    best_hyperparameters = perform_hyperparameter_search(df, tokenizer, device, args.model)
-    print("Best hyperparameters found:", best_hyperparameters)
+    df = drop_missing_remove_duplicates(df)
 
+    # Split the data into training, validation, and test sets
+    train_val_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+    train_df, val_df = train_test_split(train_val_df, test_size=0.25, random_state=42)  # 0.25 * 0.8 = 0.2
+
+    # Tune hyperparameters on the validation set
+    best_hyperparameters, best_metrics = perform_hyperparameter_search(train_df, val_df, tokenizer, device, args.model)
+    print("Best hyperparameters found:", best_hyperparameters)
+    print("Best metrics:", best_metrics)
+
+    # Prepare data for final training and testing
+    train_inputs, train_masks, train_labels = prepare_data(train_val_df, tokenizer)
+    test_inputs, test_masks, test_labels = prepare_data(test_df, tokenizer)
+    train_dataloader, _, test_dataloader = create_dataloaders(train_inputs, test_inputs, test_inputs, train_masks, test_masks, test_masks, train_labels, test_labels, test_labels, best_hyperparameters['batch_size'])
+
+    model = initialize_model(6, device, args.model)
+    optimizer = get_optimizer(model, best_hyperparameters['learning_rate'])
+
+    # Train the final model on the entire training set with the best hyperparameters
+    train(model, train_dataloader, optimizer, device, best_hyperparameters['epochs'])
+
+    # Evaluate the final model on the test set
+    avg_accuracy, all_preds, all_labels = evaluate(model, test_dataloader, device)
+    precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
+    conf_matrix = confusion_matrix(all_labels, all_preds)
+
+    # Save final evaluation metrics
+    final_metrics = {
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'accuracy': avg_accuracy,
+        'confusion_matrix': conf_matrix.tolist()  # Convert numpy array to list for JSON serialization
+    }
+    save_hyperparameters(best_hyperparameters, final_metrics, f'./best_hyperparameters_saved/final_metrics_{args.model}.json')
+
+    print("Final evaluation metrics on the test set:", final_metrics)

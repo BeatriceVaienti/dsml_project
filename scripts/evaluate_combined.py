@@ -14,7 +14,7 @@ from utils.data_augmentation import augment_df
 from utils.embeddings_generation import generate_embeddings
 from utils.label_encoding import get_encoded_y
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
-from transformers import CamembertTokenizer
+from transformers import CamembertTokenizer, CamembertConfig
 from models.model_combined import CamembertWithFeatures
 from torch.optim import AdamW
 import torch.nn as nn
@@ -29,7 +29,6 @@ def get_arguments():
     parser.add_argument('--model', type=str, choices=['camembert'], required=True, help='Specify the model to use: camembert')
     parser.add_argument('--gpu', type=int, default=0, help='Specify the GPU to use')
     return parser.parse_args()
-
 
 def prepare_data(df, tokenizer, scaler, max_len, batch_size=32):
     text = df['sentence'].to_list()
@@ -175,51 +174,45 @@ def save_hyperparameters(hyperparameters, metrics, file_path):
 if __name__ == "__main__":
     args = get_arguments()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+    
     model_choice = args.model
     print(model_choice)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model_choice = args.model
 
     if model_choice == 'camembert':
         tokenizer = CamembertTokenizer.from_pretrained('camembert-base', do_lower_case=True)
 
-    augmented_data_path = "./training/training_data_augmented.csv"
-    scaler_path = './models_saved/scaler.pkl'
-    feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
-
-    if os.path.exists(augmented_data_path) and os.path.exists(scaler_path):
-        print("Loading existing augmented dataset and scaler...")
-        df_augmented = pd.read_csv(augmented_data_path)
-        scaler = joblib.load(scaler_path)
-    else:
-        print("Creating augmented dataset and fitting scaler...")
-        # Load and prepare the augmented dataset
-        df = pd.read_csv('./training/training_data.csv')
-        df = drop_missing_remove_duplicates(df)
-        df_augmented = augment_df(df)
-        df_augmented.to_csv(augmented_data_path, index=False)
-        print(f"Augmented dataset with embeddings saved to {augmented_data_path}")
-        
-        scaler = StandardScaler()
-        feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
-        
-        scaler = scaler.fit(df_augmented[feature_columns].values)
-        # Save the scaler
-        joblib.dump(scaler, scaler_path)
-        print(f"Scaler saved to {scaler_path}")
-    # Scaling of the selected features
-    print('Scaling the features...')
-    scaled_feature_columns = scaler.transform(df_augmented[feature_columns].values)
-    df_scaled_feature_columns = pd.DataFrame(scaled_feature_columns, columns=feature_columns)
-    additional_columns = df_augmented[['sentence', 'difficulty']]
-    df_full = pd.concat([df_scaled_feature_columns, additional_columns], axis=1)
+    # Load the data
+    df = pd.read_csv('./training/training_data.csv')
+    df = drop_missing_remove_duplicates(df)
 
     # Split the data into training, validation, and test sets
-    train_val_df, test_df = train_test_split(df_full, test_size=0.2, random_state=42)
+    train_val_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
     train_df, val_df = train_test_split(train_val_df, test_size=0.25, random_state=42)  # 0.25 * 0.8 = 0.2
 
+    # Augment and generate embeddings for the training data
+    df_augmented = augment_df(train_df)
+    df_augmented = generate_embeddings(df_augmented, chosen_tokenizer='camembert', batch_size=32)
+    
+    # Save the augmented training data
+    augmented_data_path = "./training/training_data_augmented.csv"
+    df_augmented.to_csv(augmented_data_path, index=False)
+    print(f"Augmented dataset with embeddings saved to {augmented_data_path}")
+
+    # Scaling of the selected features using only the training data
+    scaler = StandardScaler()
+    feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
+    scaler.fit(df_augmented[feature_columns].values)
+    scaler_path = './models_saved/scaler.pkl'
+    joblib.dump(scaler, scaler_path)
+    print(f"Scaler saved to {scaler_path}")
+
+    # Apply the scaler to both the training and validation data
+    df_augmented[feature_columns] = scaler.transform(df_augmented[feature_columns].values)
+    val_df[feature_columns] = scaler.transform(val_df[feature_columns].values)
+    
     # Tune hyperparameters on the validation set
-    best_hyperparameters, best_metrics = perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_choice)
+    best_hyperparameters, best_metrics = perform_hyperparameter_search(df_augmented, val_df, tokenizer, device, model_choice)
     print("Best hyperparameters found:", best_hyperparameters)
     print("Best metrics:", best_metrics)
 
