@@ -4,7 +4,21 @@ Repository for the Data Science and Machine Learning course - Beatrice Vaienti a
 # 0. Introduction
 The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
 
-To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert.
+To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert (Section 2). Then, in order to boost the accuracy of our model, we decided to combine these two models with a Neural Network creating an ensemble model (Section 3). 
+
+## 0.1 Folder Structure
+This repository is thought with reusability in mind. As such, the code is organized in a modular way, with separate scripts for training, evaluation, and prediction and separate modules for models and utilities. 
+The organization of the code is as follows:
+- The `models` folder contains the code for initializing and configuring models, and in particular:
+    - `model_bert.py`: containing the code for the initialization of the CamemBERT and Flaubert models;
+    - `model_nn.py`: containing the architecture of the neural network that can be trained on the embeddings of the sentences and the additional features extracted from the text;
+    - `model_meta_nn.py`: containing the architecture of the neural network that can be trained on the predictions of the CamemBERT, Flaubert, and Neural Network models to combine them;
+- The `utils` folder includes utilities for data preprocessing.
+- The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
+
+Saved hyperparameters and logs are stored in the `best_hyperparameters_saved` folder.
+Trained models are saved in the `models_saved` folder.
+
 
 
 # 1. Preliminary evaluation
@@ -25,24 +39,9 @@ Answer the following questions
 - Do some more analysis to better understand how your model behaves.
 
 
-# Folder Structure
-In our project, we explored multiple machine learning solutions to identify the most effective approach:
-1. CamemBERT model
-2. Flaubert model
-3. A hybrid approach combining the previous two with a neural network on the sentence embeddings and augmented data (the attributes derived from the text).
 
-The organization of the code is as follows:
-- The `models` folder contains the code for initializing and configuring models, and in particular:
-    - `model_bert.py`
-    - `model_nn.py`
-    - `model_meta_nn.py`
-- The `utils` folder includes utilities for data preprocessing.
-- The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
 
-Saved hyperparameters and logs are stored in the `best_hyperparameters_saved` folder.
-Trained models are saved in the `models_saved` folder.
-
-# Flaubert / CamemBERT Model Training and Evaluation
+# 3. Flaubert / CamemBERT Model Training and Evaluation
 We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line. 
 
 ## Scripts
@@ -135,11 +134,9 @@ python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
-# Ensemble Model
+# 4. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
-Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
-Selecting MetaNN as the final model with accuracy: 0.6322916666666667
 
 
 ## Data Augmentation
@@ -148,22 +145,28 @@ To augment the data, we extracted the following attributes from the text:
 - Average length of the words
 - POS tags
 
-And generated the embeddings of the sentences using the CamemBERT model. 
+Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
+
 The functions used to augment the data can be found in the `utils/data_augmentation.py` file, while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
 
 ## Neural Network 
-
+If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with hyperparameters such as learning rate, hidden layer size, and the number of epochs
 
 ## Combination Techniques: Neural Network and lightGBM
 To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
 1. LightGBM: We used the predictions of the CamemBERT model, Flaubert model, and Neural Network as features for a LightGBM model.
 2. Neural Network: We used the predictions of the CamemBERT model, Flaubert model, and LightGBM model as features for a Neural Network model.
 
+
+Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
+Selecting MetaNN as the final model with accuracy: 0.6322916666666667
+
 ## Ensemble Model Training
 To train the ensemble model, run:
 ```bash
-python scripts/train_ensemble.py 
+python scripts/train_ensemble.py --use_nn
 ```
+Use the flag `--use_nn` to include the neural network in the ensemble model. The trained model will be saved in the `ensemble_model` folder.
 
 ### predict_ensemble.py: Prediction
 To make predictions on the test set using the ensemble model, run:
