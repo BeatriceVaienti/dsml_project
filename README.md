@@ -1,7 +1,7 @@
-# dsml_project
+# Data Science and Machine Learning Course - Chiara Berretta and Beatrice Vaienti
 Repository for the Data Science and Machine Learning course kaggle competition - Beatrice Vaienti and Chiara Berretta
 
-# To Do - Preliminary evaluation
+# 1. Preliminary evaluation
 report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
 
 table:
@@ -43,7 +43,7 @@ We used the Hugging Face library to load pre-trained models and fine-tune them o
 
 In order to increase the batch size even without the computational resources, we used the __gradient accumulation technique__. This technique allows us to simulate a larger batch size by accumulating gradients over multiple steps before updating the model weights. In particular we set the gradient accumulation to calculate the steps in order to simulate a batch size of 64. However, we still evaluated the impact of different actual batch sizes, since, notwithstanding the gradient accumulation technique, the accuracy is still influenced by the actual batch size.
 
-## evaluate_bert.py: Hyperparameter Tuning and Evaluation with Grid Search
+## `evaluate_bert.py`: Hyperparameter Tuning and Evaluation with Grid Search
 Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
 Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation.
 
@@ -89,6 +89,8 @@ The results of this experiment are shown in the following plot:
 
 Consistently with the results obtained for the base model, the learning rate 5e-05 outperforms the lower learning rate of 1e-05. However, the best accuracy still appears largely lower than the one obtained with the base model. This is probably due to the fact that the large model is more complex and requires more data to be trained properly.
 
+As a result, we decided to discard the large model and focus on the base model for the subsequent experiments.
+
 ##### Flaubert
 The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
 
@@ -99,25 +101,26 @@ In the following table, we summarize the best validation accuracy achieved for e
 #### Hyperparameter Tuning Table
 | Model      | Learning Rate | Batch Size | Epochs | Validation Accuracy |
 |------------|---------------|------------|--------|---------------------|
-| CamemBERT  | Placeholder   | Placeholder| Placeholder | Placeholder      |
-| Flaubert   | Placeholder   | Placeholder| Placeholder | Placeholder      |
+| CamemBERT  | 5e-05         | 40         | 20     | 0.5875              |
+| Flaubert   | 5e-05         | 40         | 16     | 0.596875            |
 
 #### Confusion Matrices
 The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below. 
 ![CamemBERT Confusion Matrix](path_to_camembert_confusion_matrix.png)
 ![Flaubert Confusion Matrix](path_to_flaubert_confusion_matrix.png)
 
+todo: recompute with evaluate bert the confusion matrix for the best
 
 ## Training and Prediction
 To train a model on the full dataset, execute:
 ```bash
-python scripts/train_bert.py --model [camembert|flaubert]
+python scripts/train_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The trained model will be saved in the `models_saved` folder.
 
 To make predictions on the test set using a trained model, run:
 ```bash
-python scripts/predict_bert.py --model [camembert|flaubert]
+python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
