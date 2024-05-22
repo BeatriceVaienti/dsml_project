@@ -148,7 +148,13 @@ To augment the data, we extracted the following attributes from the text:
 And generated the embeddings of the sentences using the CamemBERT model. 
 The functions used to augment the data can be found in the `utils/data_augmentation.py` file, while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
 
-## Combination Techniques
+## Neural Network 
+
+
+## Combination Techniques: Neural Network and lightGBM
+To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
+1. LightGBM: We used the predictions of the CamemBERT model, Flaubert model, and Neural Network as features for a LightGBM model.
+2. Neural Network: We used the predictions of the CamemBERT model, Flaubert model, and LightGBM model as features for a Neural Network model.
 
 ## Ensemble Model Training
 To train the ensemble model, run:
