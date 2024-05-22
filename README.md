@@ -32,7 +32,10 @@ In our project, we explored multiple machine learning solutions to identify the 
 3. A hybrid approach combining the previous two with a neural network on the sentence embeddings and augmented data (the attributes derived from the text).
 
 The organization of the code is as follows:
-- The `models` folder contains the code for initializing and configuring models.
+- The `models` folder contains the code for initializing and configuring models, and in particular:
+    - `model_bert.py`
+    - `model_nn.py`
+    - `model_meta_nn.py`
 - The `utils` folder includes utilities for data preprocessing.
 - The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
 
