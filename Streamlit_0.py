@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, CamembertForSequenceClassification
 
 # Set your OpenAI API key
 openai.api_key = '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'
-    
+
 # Load the tokenizer and the model
 tokenizer = AutoTokenizer.from_pretrained('C:\\Users\\berret_c\\Downloads\\best_model\\best_model\\camembert_full_515')
 model = CamembertForSequenceClassification.from_pretrained('C:\\Users\\berret_c\\Downloads\\best_model\\best_model\\camembert_full_515')
@@ -21,6 +21,7 @@ if "test_finished" not in st.session_state:
     st.session_state.test_finished = False
 
 levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+level_values = {'A1': 0, 'A2': 1, 'B1': 2, 'B2': 3, 'C1': 4, 'C2': 5}
 
 # Define the image paths
 image_path_left = 'C:\\Users\\berret_c\\Documents\\GitHub\\dsml_project\\Berre.png'
@@ -70,21 +71,15 @@ def process_answer():
 
     st.write(f"Predicted level: {levels[predicted_level]}")  # Debugging statement
 
-    # Check if answer predicts a level at or below the current level, or one level above
-    if predicted_level <= st.session_state.level + 1:
-        st.session_state.level = min(st.session_state.level + 1, len(levels) - 1)  # Increment level but do not exceed max
-    else:
-        st.session_state.level = min(predicted_level, len(levels) - 1)  # Jump to predicted level but do not exceed max
-
-    # Check if maximum level is reached or exceeded
-    if st.session_state.level >= len(levels) - 1:
+    if predicted_level < st.session_state.level:
+        st.write(f'Your French level is {levels[st.session_state.level]}.')
         st.session_state.test_finished = True
-        st.write(f'Your final French level is {levels[-1]}.')  # Provide final level
     else:
-        st.session_state.question = generate_question(st.session_state.level)  # Generate a new question if not at max level
+        st.session_state.level += 1
+        st.session_state.question = generate_question(st.session_state.level)  # Generate a new question here
 
 # Generate the initial question if not already set
-if not st.session_state.question and not st.session_state.test_finished:
+if not st.session_state.question:
     st.session_state.question = generate_question(st.session_state.level)
 
 # Display the question and get the user's answer
