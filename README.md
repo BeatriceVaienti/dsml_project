@@ -70,34 +70,20 @@ The results of this first experiment are shown in the following plot:
 
 ![CamemBERT Hyperparameter Tuning Log 1](images/grid_search_1_camembert.png)
 
+From this first experiment, the learning rate 5e-05 appears to consistently outperform the lower learning rate of 1e-05. As such, we decided to focus on this learning rate for the subsequent experiments. Noticing a trend of increasing accuracy with more epochs and for higher batch sizes we decided to explore further the batch sizes of 40 and 45, adding a longer epoch of 32. The results of this second experiment are shown in the following plot:
 
-| Learning Rate | Batch Size | Epochs | Validation Accuracy |
-|---------------|------------|--------|---------------------|
-|     1e-05     |     16     |   8    | 0.48125             |
-|     1e-05     |     16     |   16   | 0.4864583333333333  |
+
+![CamemBERT Hyperparameter Tuning Log 2](images/grid_search_2_camembert.png)
+
+
+
 
 
 
 ##### Flaubert
 The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
 
-| Learning Rate | Batch Size | Epochs | Validation Accuracy |
-|---------------|------------|--------|---------------------|
-|     1e-05     |     16     |   2    | 0.4239583333333333  |
-|     1e-05     |     16     |   4    | 0.4822916666666667  |
-|     1e-05     |     16     |   8    | 0.4708333333333333  |
-|     1e-05     |     16     |   16   | 0.4979166666666667  |
-|     1e-05     |     32     |   2    | 0.3885416666666667  |
-|     1e-05     |     32     |   4    | 0.45208333333333334 |
-|     1e-05     |     32     |   8    | 0.45796430000000069 |
-|     1e-05     |     32     |   16   | 0.4791666666666667  |
-|     1e-05     |     64     |   2    | 0.4083333333333333  |
-|     1e-05     |     64     |   4    | 0.4322916666666667  |
-|     1e-05     |     64     |   8    | 0.446875            |
-|     1e-05     |     64     |   16   | 0.48854166666666665 |
-|     5e-05     |     16     |   2    | 0.44895833333333335 |
-|     5e-05     |     16     |   4    | 0.47604166666666664 |
-
+![Flaubert Hyperparameter Tuning Log 2](images/grid_search_flaubert.png)
 
 In the following table, we summarize the best validation accuracy achieved for each model with the best hyperparameters found.
 
