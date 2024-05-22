@@ -18,20 +18,16 @@ Answer the following questions
 - Show examples of some erroneous predictions. Can you understand where the error is coming from?
 - Do some more analysis to better understand how your model behaves.
 
-# Ideas to try / references
-https://medium.com/tech-tavern/nlp-exercise-text-difficulty-prediction-with-ai-ccefe99daa65
-
-
 
 # Folder Structure
 In our project, we explored multiple machine learning solutions to identify the most effective approach:
 1. CamemBERT model
 2. Flaubert model
-3. A hybrid approach combining the best model of the previous two with a neural network on augmented data (the attributes derived from the text).
+3. A hybrid approach combining the previous two with a neural network on the sentence embeddings and augmented data (the attributes derived from the text).
 
 The organization of the code is as follows:
 - The `models` folder contains the code for initializing and configuring models.
-- The `utils` folder includes utilities for data preprocessing and model evaluation.
+- The `utils` folder includes utilities for data preprocessing.
 - The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
 
 Saved hyperparameters and logs are stored in the `best_hyperparameters_saved` folder.
@@ -51,12 +47,11 @@ Due to the computational cost of hyperparameter tuning, we opted to perform the 
 
 To conduct hyperparameter tuning and evaluation, run:
 ```bash
-python scripts/evaluate_bert.py --model [camembert|flaubert]
+python scripts/evaluate_bert.py --model [camembert|camembert-large|flaubert]
 ```
 
 ### Evaluation Results
-
-The best hyperparameters discovered during the tuning process are detailed in the output files within the `best_hyperparameters_saved` folder. The log with all the combinations of hyperparameters and their corresponding validation accuracy is saved in the `best_hyperparameters_saved` folder. 
+The best hyperparameters discovered during the tuning process as well as the logs with all the tested combinations of hyperparameters and their validation accuracy are detailed in the output files within the `best_hyperparameters_saved` folder. 
 ## todo re organize the evaluation so that we will split the training set into three parts: training, validation and test. We will use the validation set to tune the hyperparameters and the test set to evaluate the model.
 this is how we will do it:
 - split the training set into training, validation and testset
