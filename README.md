@@ -53,13 +53,15 @@ python scripts/evaluate_bert.py --model [camembert|camembert-large|flaubert]
 ```
 
 ### Evaluation Results
-The best hyperparameters discovered during the tuning process as well as the logs with all the tested combinations of hyperparameters and their validation accuracy are detailed in the output files within the `best_hyperparameters_saved` folder. 
+The logs with all the tested combinations of hyperparameters and their validation accuracy can be found within the `best_hyperparameters_saved` folder. 
 
 
 #### Hyperparameter Tuning Log
 The log file contains the validation accuracy for each combination of hyperparameters tested during the tuning process. The best hyperparameters are selected based on the highest validation accuracy achieved. In the following table, we show the accuracy obtained for each combination of hyperparameters tested and for each model.
 ##### CamemBERT
 The model used for CamemBERT is the `camembert-base` model. 
+
+
 
 | Learning Rate | Batch Size | Epochs | Validation Accuracy |
 |---------------|------------|--------|---------------------|
