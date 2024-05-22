@@ -130,8 +130,20 @@ python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
-# Ensemble Model Training and Evaluation
+# Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
+
+## Data Augmentation
+
+## Combination Techniques
+
+### predict_ensemble.py: Prediction
+To make predictions on the test set using the ensemble model, run:
+```bash
+python scripts/predict_ensemble.py --meta_model [lgb|nn]
+```
+
+Based on the chosen meta model type, the script will load the corresponding trained model and make predictions on the test set. The results will be saved in the `kaggle_submissions` folder.
 
 # Accuracies obtained for the Kaggle competition
 
