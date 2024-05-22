@@ -1,0 +1,9 @@
+{
+    "best_hyperparameters": {
+        "learning_rate": 0.0001,
+        "hidden_size": 32,
+        "batch_size": 16,
+        "epochs": 64
+    },
+    "best_mean_accuracy": 0.3091666666666667
+}

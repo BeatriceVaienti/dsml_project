@@ -102,6 +102,16 @@ def save_hyperparameters(hyperparameters, metrics, file_path):
         file.write('\n')  # Ensure each entry is on a new line
     print(f"Saved best hyperparameters and evaluation metrics to {file_path}")
 
+def log_hyperparameters(hyperparameters, accuracy, file_path):
+    # Append hyperparameter performance to the log file
+    data = {
+        'hyperparameters': hyperparameters,
+        'accuracy': accuracy
+    }
+    with open(file_path, 'a') as file:  # Changed to 'a' for append mode
+        file.write(json.dumps(data) + '\n')
+    print(f"Logged hyperparameters and accuracy to {file_path}")
+
 def prepare_data(df, tokenizer, max_length=264):
     text = df['sentence'].to_list()
     labels = get_encoded_y(df).tolist()
@@ -141,11 +151,11 @@ def create_dataloaders(train_inputs, validation_inputs, test_inputs, train_masks
 
 def perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_choice):
     learning_rates = [5e-05, 1e-05]
-    batch_sizes = [45,40, 32, 16]  
+    batch_sizes = [45, 40, 32, 16]  
     epoch_lengths = [10, 16, 20, 32]
     best_metrics = {'accuracy': 0}  # Initialize with low accuracy to ensure replacement
     best_params = {}
-    log_file_path = f'./best_hyperparameters_saved/hyperparameter_log_{model_choice}.json'
+    log_file_path = f'./hyperparameters_log/hyperparameter_log_{model_choice}.json'
     all_combinations = list(product(learning_rates, batch_sizes, epoch_lengths))
 
     train_inputs, train_masks, train_labels = prepare_data(train_df, tokenizer)
@@ -178,7 +188,7 @@ def perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_cho
             }
             print(f"New best model found: {best_params} with Accuracy: {metrics['accuracy']}")
 
-    save_hyperparameters(best_params, best_metrics, f'./best_hyperparameters_saved/best_hyperparameters_{model_choice}.json')
+    save_hyperparameters(best_params, best_metrics, f'./hyperparameter_log/best_hyperparameters_eval_{model_choice}.json')
     return best_params, best_metrics
 
 def log_hyperparameters(hyperparameters, accuracy, file_path):

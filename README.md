@@ -4,6 +4,22 @@ Repository for the Data Science and Machine Learning course - Beatrice Vaienti a
 # 0. Introduction
 The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
 
+To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert (Section 2). Then, in order to boost the accuracy of our model, we decided to combine these two models with a Neural Network creating an ensemble model (Section 3). 
+
+## 0.1 Folder Structure
+This repository is thought with reusability in mind. As such, the code is organized in a modular way, with separate scripts for training, evaluation, and prediction and separate modules for models and utilities. 
+The organization of the code is as follows:
+- The `models` folder contains the code for initializing and configuring models, and in particular:
+    - `model_bert.py`: containing the code for the initialization of the CamemBERT and Flaubert models;
+    - `model_nn.py`: containing the architecture of the neural network that can be trained on the embeddings of the sentences and the additional features extracted from the text;
+    - `model_meta_nn.py`: containing the architecture of the neural network that can be trained on the predictions of the CamemBERT, Flaubert, and Neural Network models to combine them;
+- The `utils` folder includes utilities for data preprocessing.
+- The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
+
+Saved hyperparameters and logs are stored in the `best_hyperparameters_saved` folder.
+Trained models are saved in the `models_saved` folder.
+
+
 
 # 1. Preliminary evaluation
 report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
@@ -23,21 +39,9 @@ Answer the following questions
 - Do some more analysis to better understand how your model behaves.
 
 
-# Folder Structure
-In our project, we explored multiple machine learning solutions to identify the most effective approach:
-1. CamemBERT model
-2. Flaubert model
-3. A hybrid approach combining the previous two with a neural network on the sentence embeddings and augmented data (the attributes derived from the text).
 
-The organization of the code is as follows:
-- The `models` folder contains the code for initializing and configuring models.
-- The `utils` folder includes utilities for data preprocessing.
-- The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
 
-Saved hyperparameters and logs are stored in the `best_hyperparameters_saved` folder.
-Trained models are saved in the `models_saved` folder.
-
-# Flaubert / CamemBERT Model Training and Evaluation
+# 3. Flaubert / CamemBERT Model Training and Evaluation
 We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line. 
 
 ## Scripts
@@ -49,7 +53,7 @@ In order to increase the batch size even without the computational resources, we
 
 ## `evaluate_bert.py`: Hyperparameter Tuning and Evaluation with Grid Search
 Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
-Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation.
+Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation. In particular, the full labelled dataset was split into train, test and evaluation. The test dataset was the one used to calculate the accuracy in the logs, the evaluation dataset was employed to obtain the scores and confusion matrix with the best hyperparameters.
 
 To conduct hyperparameter tuning and evaluation, run:
 ```bash
@@ -109,13 +113,15 @@ In the following table, we summarize the best validation accuracy achieved for e
 | Flaubert   | 5e-05         | 40         | 16     | 0.596875            |
 
 #### Confusion Matrices
-The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below. 
-![CamemBERT Confusion Matrix](path_to_camembert_confusion_matrix.png)
+The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below, along with their accuracy, precision, recall, and F1-score.
+![CamemBERT Confusion Matrix](images/camembert_matrix.png)
 ![Flaubert Confusion Matrix](path_to_flaubert_confusion_matrix.png)
 
-todo: recompute with evaluate bert the confusion matrix for the best
 
-## Training and Prediction
+From the two confusion matrices we can notice that the most difficult class to predict is the C2 class, which in many cases is wrongly predicted as other classes, mainly C1. 
+
+
+## `train_bert.py` , `predict_bert.py`: Training and Prediction
 To train a model on the full dataset, execute:
 ```bash
 python scripts/train_bert.py --model [camembert|camembert-large|flaubert]
@@ -128,8 +134,51 @@ python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
-# Combined Model Training and Evaluation
-We combined the best-performing model from the CamemBERT and Flaubert approaches with a neural network trained on augmented data. The neural network was trained on the attributes derived from the text, in particular the number of words, the average length of the words, the POS tags.
+# 4. Ensemble Model
+To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
+
+
+
+## Data Augmentation
+To augment the data, we extracted the following attributes from the text:
+- Number of words
+- Average length of the words
+- POS tags
+
+Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
+
+The functions used to augment the data can be found in the `utils/data_augmentation.py` file, while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
+
+## Neural Network 
+If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with the following hyperparameters: learning rate, hidden layer size, and number of epochs.
+### Determining the Best Hyperparameters for the Neural Network
+
+## Combination Techniques: Neural Network and lightGBM
+To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
+1. LightGBM: We used the predictions of the CamemBERT model, Flaubert model, and Neural Network as features for a LightGBM model.
+2. Neural Network: We used the predictions of the CamemBERT model, Flaubert model, and LightGBM model as features for a Neural Network model.
+
+
+Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
+Selecting MetaNN as the final model with accuracy: 0.6322916666666667
+
+## Ensemble Model Training
+To train the ensemble model, run:
+```bash
+python scripts/train_ensemble.py --use_nn
+```
+Use the flag `--use_nn` to include the neural network in the ensemble model. The trained model will be saved in the `ensemble_model` folder.
+
+### predict_ensemble.py: Prediction
+To make predictions on the test set using the ensemble model, run:
+```bash
+python scripts/predict_ensemble.py --meta_model [lgb|nn]
+```
+NB: in the script, remember to update the latest hidden size used in the neural networks.
+
+
+
+Based on the chosen meta model type, the script will load the corresponding trained model and make predictions on the test set. The results will be saved in the `kaggle_submissions` folder.
 
 # Accuracies obtained for the Kaggle competition
 
