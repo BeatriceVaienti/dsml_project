@@ -1,0 +1,4 @@
+{"hyperparameters": {"learning_rate": 1e-05, "batch_size": 10, "epochs": 10}, "accuracy": 0.3552083333333334}
+{"hyperparameters": {"learning_rate": 1e-05, "batch_size": 10, "epochs": 16}, "accuracy": 0.3614583333333334}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 10, "epochs": 10}, "accuracy": 0.1729166666666665}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 10, "epochs": 16}, "accuracy": 0.1729166666666665}

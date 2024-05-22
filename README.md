@@ -42,7 +42,7 @@ We used the Hugging Face library to load pre-trained models and fine-tune them o
 - `predict_bert.py`: Makes predictions on new, unlabeled data using a trained model.
 
 ## Hyperparameter Tuning and Evaluation
-Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `best_hyperparameters_saved` folder.
+Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
 Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation.
 
 To conduct hyperparameter tuning and evaluation, run:
