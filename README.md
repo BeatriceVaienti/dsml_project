@@ -34,14 +34,16 @@ Saved hyperparameters and logs are stored in the `best_hyperparameters_saved` fo
 Trained models are saved in the `models_saved` folder.
 
 # Flaubert / CamemBERT Model Training and Evaluation
-We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line.
+We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line. 
 
 ## Scripts
 - `evaluate_bert.py`: Manages training and validation loops, performing hyperparameter tuning with a train-validation split.
 - `train_bert.py`: Trains a selected model on the full dataset.
 - `predict_bert.py`: Makes predictions on new, unlabeled data using a trained model.
 
-## Hyperparameter Tuning and Evaluation
+In order to increase the batch size even without the computational resources, we used the __gradient accumulation technique__. This technique allows us to simulate a larger batch size by accumulating gradients over multiple steps before updating the model weights. In particular we set the gradient accumulation to calculate the steps in order to simulate a batch size of 64. However, we still evaluated the impact of different actual batch sizes, since, notwithstanding the gradient accumulation technique, the accuracy is still influenced by the actual batch size.
+
+## evaluate_bert.py: Hyperparameter Tuning and Evaluation
 Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
 Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation.
 
