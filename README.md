@@ -52,7 +52,7 @@ To conduct hyperparameter tuning and evaluation, run:
 python scripts/evaluate_bert.py --model [camembert|camembert-large|flaubert]
 ```
 
-The `--model` argument specifies the model to use, with options for `camembert-base` (camembert), `camembert-large`, and `flaubert-base`. The script will perform hyperparameter tuning and save a log with the results of the grid search in the `best_hyperparameters_saved` folder. Given the computational cost of hyperparameter tuning, we decided to carefully pick the hyperparameters to test each time after some preliminary tests, without repeating the same ones for all the models. 
+The `--model` argument specifies the model to use, with options for `camembert-base` (camembert), `camembert/camembert-large`, and `flaubert/flaubert_base_cased`. The script will perform hyperparameter tuning and save a log with the results of the grid search in the `best_hyperparameters_saved` folder. Given the computational cost of hyperparameter tuning, we decided to carefully pick the hyperparameters to test each time after some preliminary tests, without repeating the same ones for all the models. 
 
 ### Evaluation Results
 The logs with all the tested combinations of hyperparameters and their validation accuracy can be found within the `best_hyperparameters_saved` folder. 
@@ -77,10 +77,9 @@ From this first experiment, the learning rate 5e-05 appears to consistently outp
 
 ![CamemBERT Hyperparameter Tuning Log 2](images/grid_search_2_camembert.png)
 
-
-
-
-
+From the second experiment, we can see that a further increase of the epochs does not lead to an improvement in the accuracy. The best accuracy is obtained with a batch size of 40 and 20 epochs.
+##### CamemBERT large
+The model used for CamemBERT large is the `camembert/camembert-large` model. 
 
 ##### Flaubert
 The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
