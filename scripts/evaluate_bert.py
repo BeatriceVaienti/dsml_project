@@ -19,7 +19,7 @@ import argparse
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Train a model to predict CEFR levels of French sentences.')
-    parser.add_argument('--model', type=str, choices=['camembert', 'flaubert'], required=True, help='Choose the model to use: camembert or flaubert')
+    parser.add_argument('--model', type=str, choices=['camembert', 'camembert-large', 'flaubert'], required=True, help='Choose the model to use: camembert, camembert-large, or flaubert')
     return parser.parse_args()
 
 def flat_accuracy(preds, labels):
@@ -27,17 +27,25 @@ def flat_accuracy(preds, labels):
     labels_flat = labels.flatten()
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
-def train(model, train_dataloader, optimizer, device):
+def train(model, train_dataloader, optimizer, device, scaler, gradient_accumulation_steps=1):
     model.train()
     total_loss = 0
     for step, batch in tqdm(enumerate(train_dataloader), desc="Training", total=len(train_dataloader)):
         batch = tuple(t.to(device) for t in batch)
         b_input_ids, b_input_mask, b_labels = batch
         optimizer.zero_grad()
-        outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
-        loss = outputs[0]
-        loss.backward()
-        optimizer.step()
+        
+        with torch.cuda.amp.autocast():
+            outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
+            loss = outputs[0]
+        
+        scaler.scale(loss).backward()
+        
+        if (step + 1) % gradient_accumulation_steps == 0:
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad()
+        
         total_loss += loss.item()
     avg_train_loss = total_loss / len(train_dataloader)
     return avg_train_loss
@@ -64,11 +72,11 @@ def evaluate(model, validation_dataloader, device):
     avg_accuracy = eval_accuracy / nb_eval_steps
     return avg_accuracy, all_preds, all_labels
 
-def train_and_evaluate(model, train_dataloader, validation_dataloader, optimizer, device, epochs):
+def train_and_evaluate(model, train_dataloader, validation_dataloader, optimizer, device, epochs, scaler, gradient_accumulation_steps=1):
     model.to(device)
     best_metrics = {}
     for epoch in trange(epochs, desc="Epoch"):
-        train_loss = train(model, train_dataloader, optimizer, device)
+        train_loss = train(model, train_dataloader, optimizer, device, scaler, gradient_accumulation_steps)
         avg_accuracy, all_preds, all_labels = evaluate(model, validation_dataloader, device)
 
         if avg_accuracy > best_metrics.get('accuracy', 0):
@@ -89,20 +97,21 @@ def save_hyperparameters(hyperparameters, metrics, file_path):
         'best_parameters': hyperparameters,
         'metrics': metrics
     }
-    with open(file_path, 'w') as file:
+    with open(file_path, 'a') as file:  # Changed to 'a' for append mode
         json.dump(data, file)
+        file.write('\n')  # Ensure each entry is on a new line
     print(f"Saved best hyperparameters and evaluation metrics to {file_path}")
 
-def prepare_data(df, tokenizer, max_len):
+def prepare_data(df, tokenizer, max_length=264):
     text = df['sentence'].to_list()
     labels = get_encoded_y(df).tolist()
 
     encoded_dict = tokenizer.batch_encode_plus(
         text,
         add_special_tokens=True,
-        max_length=max_len,
-        padding='max_length',
-        truncation=True,
+        padding='max_length',  # Automatically pad to the specified max_length
+        truncation=True,  # Ensure truncation to the specified max_length
+        max_length=max_length,
         return_attention_mask=True,
         return_tensors='pt'
     )
@@ -130,26 +139,28 @@ def create_dataloaders(train_inputs, validation_inputs, test_inputs, train_masks
 
     return train_dataloader, validation_dataloader, test_dataloader
 
-
 def perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_choice):
-    learning_rates = [1e-5, 5e-5, 1e-4]
-    batch_sizes = [16, 64, 128]
-    epoch_lengths = [16]
+    learning_rates = [5e-05, 1e-05]
+    batch_sizes = [45,40, 32, 16]  
+    epoch_lengths = [10, 16, 20, 32]
     best_metrics = {'accuracy': 0}  # Initialize with low accuracy to ensure replacement
     best_params = {}
     log_file_path = f'./best_hyperparameters_saved/hyperparameter_log_{model_choice}.json'
     all_combinations = list(product(learning_rates, batch_sizes, epoch_lengths))
-    max_len = 264
 
-    train_inputs, train_masks, train_labels = prepare_data(train_df, tokenizer, max_len)
-    val_inputs, val_masks, val_labels = prepare_data(val_df, tokenizer, max_len)
+    train_inputs, train_masks, train_labels = prepare_data(train_df, tokenizer)
+    val_inputs, val_masks, val_labels = prepare_data(val_df, tokenizer)
 
     for lr, batch_size, epochs in tqdm(all_combinations, desc='Hyperparameter Search Progress'):
         train_dataloader, validation_dataloader, _ = create_dataloaders(train_inputs, val_inputs, val_inputs, train_masks, val_masks, val_masks, train_labels, val_labels, val_labels, batch_size)
         model = initialize_model(6, device, model_choice)  # Dynamically initialize the model
         optimizer = get_optimizer(model, lr)
 
-        metrics = train_and_evaluate(model, train_dataloader, validation_dataloader, optimizer, device, epochs)
+        # Using gradient accumulation
+        gradient_accumulation_steps = max(1, 64 // batch_size)  # Simulate a batch size of 64
+        scaler = torch.cuda.amp.GradScaler()  # Mixed precision scaler
+
+        metrics = train_and_evaluate(model, train_dataloader, validation_dataloader, optimizer, device, epochs, scaler, gradient_accumulation_steps)
 
         # Log current hyperparameters and their accuracy
         log_hyperparameters({
@@ -176,15 +187,23 @@ def log_hyperparameters(hyperparameters, accuracy, file_path):
         'hyperparameters': hyperparameters,
         'accuracy': accuracy
     }
-    with open(file_path, 'a') as file:
+    with open(file_path, 'a') as file:  # Changed to 'a' for append mode
         file.write(json.dumps(data) + '\n')
     print(f"Logged hyperparameters and accuracy to {file_path}")
 
 if __name__ == "__main__":
     args = get_arguments()
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if torch.cuda.is_available():
+        device = 'cuda:0'
+        torch.cuda.empty_cache()  # Clear CUDA cache
+    else:
+        device = 'cpu'
+
+    print('USED DEVICE: ', device)
     if args.model == 'camembert':
         tokenizer = CamembertTokenizer.from_pretrained('camembert-base', do_lower_case=True)
+    elif args.model == 'camembert-large':
+        tokenizer = CamembertTokenizer.from_pretrained('camembert/camembert-large', do_lower_case=True)
     else:  # flaubert
         tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_base_cased', do_lower_case=True)
 
@@ -207,9 +226,10 @@ if __name__ == "__main__":
 
     model = initialize_model(6, device, args.model)
     optimizer = get_optimizer(model, best_hyperparameters['learning_rate'])
+    scaler = torch.cuda.amp.GradScaler()  # Mixed precision scaler
 
     # Train the final model on the entire training set with the best hyperparameters
-    train(model, train_dataloader, optimizer, device, best_hyperparameters['epochs'])
+    train(model, train_dataloader, optimizer, device, scaler, best_hyperparameters['epochs'])
 
     # Evaluate the final model on the test set
     avg_accuracy, all_preds, all_labels = evaluate(model, test_dataloader, device)
