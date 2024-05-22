@@ -133,6 +133,10 @@ The model contained in the `models_saved` folder will be used to predict on the 
 # Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
+Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
+Selecting MetaNN as the final model with accuracy: 0.6322916666666667
+
+
 ## Data Augmentation
 
 ## Combination Techniques
@@ -142,6 +146,9 @@ To make predictions on the test set using the ensemble model, run:
 ```bash
 python scripts/predict_ensemble.py --meta_model [lgb|nn]
 ```
+NB: in the script, remember to update the latest hidden size used in the neural networks.
+
+
 
 Based on the chosen meta model type, the script will load the corresponding trained model and make predictions on the test set. The results will be saved in the `kaggle_submissions` folder.
 
