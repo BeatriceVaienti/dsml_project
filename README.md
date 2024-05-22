@@ -1,5 +1,9 @@
 # Data Science and Machine Learning Course - Chiara Berretta and Beatrice Vaienti
-Repository for the Data Science and Machine Learning course kaggle competition - Beatrice Vaienti and Chiara Berretta
+Repository for the Data Science and Machine Learning course - Beatrice Vaienti and Chiara Berretta
+
+# 0. Introduction
+The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
+
 
 # 1. Preliminary evaluation
 report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
