@@ -60,7 +60,15 @@ The logs with all the tested combinations of hyperparameters and their validatio
 The log file contains the validation accuracy for each combination of hyperparameters tested during the tuning process. The best hyperparameters are selected based on the highest validation accuracy achieved. In the following table, we show the accuracy obtained for each combination of hyperparameters tested and for each model.
 ##### CamemBERT
 The model used for CamemBERT is the `camembert-base` model. 
+As a first test, we evaluated the following hyperparameters:
+- Learning Rate: [1e-05, 5e-05];
+- Batch Size: [16, 32, 40, 45] with gradient accumulation to simulate a batch size of 64;
+- Epochs: [10, 16, 20]
 
+
+The results of this first experiment are shown in the following plot:
+
+![CamemBERT Hyperparameter Tuning Log 1](images/grid_search_1_camembert.png)
 
 
 | Learning Rate | Batch Size | Epochs | Validation Accuracy |
