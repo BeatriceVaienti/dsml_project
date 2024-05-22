@@ -64,7 +64,7 @@ The log file contains the validation accuracy for each combination of hyperparam
 The model used for CamemBERT is the `camembert-base` model. 
 As a first test, we evaluated the following hyperparameters:
 - Learning Rate: [1e-05, 5e-05];
-- Batch Size: [16, 32, 40, 45] with gradient accumulation to simulate a batch size of 64;
+- Batch Size: [16, 32, 40, 45] with __gradient accumulation__ to simulate a batch size of 64;
 - Epochs: [10, 16, 20]
 
 
@@ -79,7 +79,15 @@ From this first experiment, the learning rate 5e-05 appears to consistently outp
 
 From the second experiment, we can see that a further increase of the epochs does not lead to an improvement in the accuracy. The best accuracy is obtained with a batch size of 40 and 20 epochs.
 ##### CamemBERT large
-The model used for CamemBERT large is the `camembert/camembert-large` model. 
+The model used for CamemBERT large is the `camembert/camembert-large` model. Given the computational cost of training the large model, we had to test it with a smaller range of hyperparameters and with a smaller batch size to avoid a memory error. The hyperparameters tested are:
+- Learning Rate: [1e-05, 5e-05];
+- Batch Size: [10] with __gradient accumulation__ to simulate a batch size of 64;
+- Epochs: [10, 16]
+
+The results of this experiment are shown in the following plot:
+![Flaubert Hyperparameter Tuning Log 2](images/grid_search_camembert_large.png)
+
+Consistently with the results obtained for the base model, the learning rate 5e-05 outperforms the lower learning rate of 1e-05. However, the best accuracy still appears largely lower than the one obtained with the base model. This is probably due to the fact that the large model is more complex and requires more data to be trained properly.
 
 ##### Flaubert
 The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
