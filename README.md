@@ -43,7 +43,7 @@ We used the Hugging Face library to load pre-trained models and fine-tune them o
 
 In order to increase the batch size even without the computational resources, we used the __gradient accumulation technique__. This technique allows us to simulate a larger batch size by accumulating gradients over multiple steps before updating the model weights. In particular we set the gradient accumulation to calculate the steps in order to simulate a batch size of 64. However, we still evaluated the impact of different actual batch sizes, since, notwithstanding the gradient accumulation technique, the accuracy is still influenced by the actual batch size.
 
-## evaluate_bert.py: Hyperparameter Tuning and Evaluation
+## evaluate_bert.py: Hyperparameter Tuning and Evaluation with Grid Search
 Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
 Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation.
 
@@ -51,6 +51,8 @@ To conduct hyperparameter tuning and evaluation, run:
 ```bash
 python scripts/evaluate_bert.py --model [camembert|camembert-large|flaubert]
 ```
+
+The `--model` argument specifies the model to use, with options for `camembert-base` (camembert), `camembert-large`, and `flaubert-base`. The script will perform hyperparameter tuning and save a log with the results of the grid search in the `best_hyperparameters_saved` folder. Given the computational cost of hyperparameter tuning, we decided to carefully pick the hyperparameters to test each time after some preliminary tests, without repeating the same ones for all the models. 
 
 ### Evaluation Results
 The logs with all the tested combinations of hyperparameters and their validation accuracy can be found within the `best_hyperparameters_saved` folder. 
