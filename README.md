@@ -4,6 +4,8 @@ Repository for the Data Science and Machine Learning course - Beatrice Vaienti a
 # 0. Introduction
 The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
 
+To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert.
+
 
 # 1. Preliminary evaluation
 report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
@@ -115,7 +117,7 @@ The confusion matrices for the CamemBERT and Flaubert models obtained for the be
 
 todo: recompute with evaluate bert the confusion matrix for the best
 
-## Training and Prediction
+## `train_bert.py` , `predict_bert.py`: Training and Prediction
 To train a model on the full dataset, execute:
 ```bash
 python scripts/train_bert.py --model [camembert|camembert-large|flaubert]
@@ -128,8 +130,8 @@ python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
-# Combined Model Training and Evaluation
-We combined the best-performing model from the CamemBERT and Flaubert approaches with a neural network trained on augmented data. The neural network was trained on the attributes derived from the text, in particular the number of words, the average length of the words, the POS tags.
+# Ensemble Model Training and Evaluation
+To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
 # Accuracies obtained for the Kaggle competition
 
