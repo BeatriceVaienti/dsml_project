@@ -281,8 +281,7 @@ if __name__ == "__main__":
         print('Saving tokenizer camembert...')
         camembert_tokenizer.save_pretrained(f'./ensemble_model/full/camembert_full')
     
-    # Train SimpleNN
-            
+    # Train SimpleNN   
     nn_hyperparameters = {
             "learning_rate": 0.0001,
             "hidden_size": 64,

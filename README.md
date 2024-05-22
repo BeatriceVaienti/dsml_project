@@ -150,7 +150,8 @@ Embeddings for the sentences are generated using the selected transformer model 
 The functions used to augment the data can be found in the `utils/data_augmentation.py` file, while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
 
 ## Neural Network 
-If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with hyperparameters such as learning rate, hidden layer size, and the number of epochs
+If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with the following hyperparameters: learning rate, hidden layer size, and number of epochs.
+### Determining the Best Hyperparameters for the Neural Network
 
 ## Combination Techniques: Neural Network and lightGBM
 To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
