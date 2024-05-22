@@ -4,7 +4,7 @@ Repository for the Data Science and Machine Learning course - Beatrice Vaienti a
 # 0. Introduction
 The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
 
-To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert (Section 2). Then, in order to boost the accuracy of our model, we decided to combine these two models with a Neural Network creating an ensemble model (Section 3). 
+To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert (Section 2) and a Neural Network (Section 3). Then, in order to boost the accuracy of our model, we decided to combine these three models creating an ensemble model (Section 4). 
 
 ## 0.1 Folder Structure
 This repository is thought with reusability in mind. As such, the code is organized in a modular way, with separate scripts for training, evaluation, and prediction and separate modules for models and utilities. 
@@ -134,24 +134,43 @@ python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 ```
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
-# 4. Ensemble Model
-To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
+# 4. Neural Network
+## 4.1 Data Augmentation
 
-
-
-## Data Augmentation
 To augment the data, we extracted the following attributes from the text:
 - Number of words
 - Average length of the words
 - POS tags
+The functions used to augment the data can be found in the `utils/data_augmentation.py` file, and an interactive generation of the augmented data can be done in the jupyter notebook at `notebooks/data_augmentation`
 
+## 4.2 Embeddings
 Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
 
-The functions used to augment the data can be found in the `utils/data_augmentation.py` file, while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
+while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
+### Determining the Best Hyperparameters for the Neural Network
+We performed a grid search with a k-fold cross-validation to determine the best hyperparameters for the neural network. To run the code for the evaluation, use:
+```bash
+python scripts/evaluate_nn.py
+```
+
+The hyperparameters tested are:
+- learning_rates = [1e-4, 5e-5]
+- hidden_sizes = [32, 64]
+- batch_sizes = [16, 32, 64, 128]
+- epochs = [32, 64]
+
+First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT.
+
+# 5. Ensemble Model
+To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
+
+
+
 
 ## Neural Network 
-If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with the following hyperparameters: learning rate, hidden layer size, and number of epochs.
-### Determining the Best Hyperparameters for the Neural Network
+If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 3.
+
+
 
 ## Combination Techniques: Neural Network and lightGBM
 To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
@@ -186,6 +205,10 @@ Based on the chosen meta model type, the script will load the corresponding trai
 |------------|----------|
 | CamemBERT  | Placeholder | 
 | Flaubert   | Placeholder |
+
+# Future Work
+comment on the fact that one limitation consists in the fact that we are not actually doing the k-fold for the transformers models, so the result is biased towards the specific split done on the data (especially considering that the dataset is limited) -> a potential future work would be a k-fold hyperparameter tuning
+
 
 # Conclusion
 

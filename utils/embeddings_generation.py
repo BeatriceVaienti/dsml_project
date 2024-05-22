@@ -44,7 +44,7 @@ def generate_embeddings_old(df, chosen_tokenizer='camembert', batch_size=32):
 def generate_embeddings(df, batch_size=32):
 
     df = df.copy()
-    tokenizers = ['camembert', 'flaubert']
+    tokenizers = ['flaubert']
     num_classes = 6
     embedding_size_tot = 0
     for chosen_tokenizer in tokenizers:

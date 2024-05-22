@@ -155,7 +155,7 @@ def perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_cho
     epoch_lengths = [10, 16, 20, 32]
     best_metrics = {'accuracy': 0}  # Initialize with low accuracy to ensure replacement
     best_params = {}
-    log_file_path = f'./hyperparameters_log/hyperparameter_log_{model_choice}.json'
+    log_file_path = f'./hyperparameters_log/hyperparameters_log_{model_choice}.json'
     all_combinations = list(product(learning_rates, batch_sizes, epoch_lengths))
 
     train_inputs, train_masks, train_labels = prepare_data(train_df, tokenizer)
@@ -188,7 +188,7 @@ def perform_hyperparameter_search(train_df, val_df, tokenizer, device, model_cho
             }
             print(f"New best model found: {best_params} with Accuracy: {metrics['accuracy']}")
 
-    save_hyperparameters(best_params, best_metrics, f'./hyperparameter_log/best_hyperparameters_eval_{model_choice}.json')
+    save_hyperparameters(best_params, best_metrics, f'./hyperparameters_log/best_hyperparameters_eval_{model_choice}.json')
     return best_params, best_metrics
 
 def log_hyperparameters(hyperparameters, accuracy, file_path):
@@ -237,11 +237,10 @@ if __name__ == "__main__":
     model = initialize_model(6, device, args.model)
     optimizer = get_optimizer(model, best_hyperparameters['learning_rate'])
     scaler = torch.cuda.amp.GradScaler()  # Mixed precision scaler
-
+    gradient_accumulation_steps = max(1, 64 // best_hyperparameters['batch_size'])  # Simulate a batch size of 64
     # Train the final model on the entire training set with the best hyperparameters
-    train(model, train_dataloader, optimizer, device, scaler, best_hyperparameters['epochs'])
 
-    # Evaluate the final model on the test set
+    train(model, train_dataloader, optimizer, device, scaler, gradient_accumulation_steps)
     avg_accuracy, all_preds, all_labels = evaluate(model, test_dataloader, device)
     precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
     conf_matrix = confusion_matrix(all_labels, all_preds)
@@ -254,6 +253,6 @@ if __name__ == "__main__":
         'accuracy': avg_accuracy,
         'confusion_matrix': conf_matrix.tolist()  # Convert numpy array to list for JSON serialization
     }
-    save_hyperparameters(best_hyperparameters, final_metrics, f'./best_hyperparameters_saved/final_metrics_{args.model}.json')
+    save_hyperparameters(best_hyperparameters, final_metrics, f'./hyperparameters_log/final_metrics_{args.model}.json')
 
     print("Final evaluation metrics on the test set:", final_metrics)

@@ -56,10 +56,10 @@ def prepare_nn_data(df, scaler, batch_size=32, shuffle=True, device='cpu'):
     features = df[feature_columns].values
     features = scaler.transform(features)
     
-    embeddings_camembert = np.vstack(df['embeddings_camembert'].values)
+    #embeddings_camembert = np.vstack(df['embeddings_camembert'].values)
     embeddings_flaubert= np.vstack(df['embeddings_flaubert'].values)
     # Combine features and embeddings
-    combined_features = np.hstack((features, embeddings_camembert, embeddings_flaubert))
+    combined_features = np.hstack((features, embeddings_flaubert)) #add back flaubert here
     
     combined_features = torch.tensor(combined_features, dtype=torch.float32).to(device)
     labels = torch.tensor(labels).to(device)
