@@ -51,7 +51,7 @@ In order to increase the batch size even without the computational resources, we
 
 ## `evaluate_bert.py`: Hyperparameter Tuning and Evaluation with Grid Search
 Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
-Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation.
+Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation. In particular, the full labelled dataset was split into train, test and evaluation. The test dataset was the one used to calculate the accuracy in the logs, the evaluation dataset was employed to obtain the scores and confusion matrix with the best hyperparameters.
 
 To conduct hyperparameter tuning and evaluation, run:
 ```bash
@@ -111,11 +111,13 @@ In the following table, we summarize the best validation accuracy achieved for e
 | Flaubert   | 5e-05         | 40         | 16     | 0.596875            |
 
 #### Confusion Matrices
-The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below. 
-![CamemBERT Confusion Matrix](path_to_camembert_confusion_matrix.png)
+The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below, along with their accuracy, precision, recall, and F1-score.
+![CamemBERT Confusion Matrix](images/camembert_matrix.png)
 ![Flaubert Confusion Matrix](path_to_flaubert_confusion_matrix.png)
 
-todo: recompute with evaluate bert the confusion matrix for the best
+
+From the two confusion matrices we can notice that the most difficult class to predict is the C2 class, which in many cases is wrongly predicted as other classes, mainly C1. 
+
 
 ## `train_bert.py` , `predict_bert.py`: Training and Prediction
 To train a model on the full dataset, execute:
@@ -138,8 +140,21 @@ Selecting MetaNN as the final model with accuracy: 0.6322916666666667
 
 
 ## Data Augmentation
+To augment the data, we extracted the following attributes from the text:
+- Number of words
+- Average length of the words
+- POS tags
+
+And generated the embeddings of the sentences using the CamemBERT model. 
+The functions used to augment the data can be found in the `utils/data_augmentation.py` file, while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
 
 ## Combination Techniques
+
+## Ensemble Model Training
+To train the ensemble model, run:
+```bash
+python scripts/train_ensemble.py 
+```
 
 ### predict_ensemble.py: Prediction
 To make predictions on the test set using the ensemble model, run:
