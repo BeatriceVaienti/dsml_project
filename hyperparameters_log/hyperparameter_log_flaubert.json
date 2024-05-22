@@ -1,0 +1,11 @@
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 45, "epochs": 10}, "accuracy": 0.5808080808080807}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 45, "epochs": 16}, "accuracy": 0.5818181818181817}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 45, "epochs": 20}, "accuracy": 0.5707070707070705}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 45, "epochs": 32}, "accuracy": 0.5747474747474747}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 40, "epochs": 10}, "accuracy": 0.5604166666666668}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 40, "epochs": 16}, "accuracy": 0.596875}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 40, "epochs": 20}, "accuracy": 0.5739583333333333}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 40, "epochs": 32}, "accuracy": 0.578125}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 32, "epochs": 10}, "accuracy": 0.5697916666666667}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 32, "epochs": 16}, "accuracy": 0.45729166666666665}
+{"hyperparameters": {"learning_rate": 5e-05, "batch_size": 32, "epochs": 20}, "accuracy": 0.5697916666666667}
