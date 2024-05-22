@@ -14,7 +14,7 @@ from torch.optim import AdamW
 import torch.nn as nn
 import joblib
 import lightgbm as lgb
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import json
 from utils.embeddings_generation import generate_embeddings
 import argparse
@@ -97,9 +97,9 @@ def prepare_nn_data_with_embeddings(df, scaler, batch_size=32, shuffle=True, dev
 def train_model(model, dataloader, optimizer, device, scaler,  num_epochs=1, use_features=False, gradient_accumulation_steps=1):
     model.train()
     model.to(device)
-    for epoch in range(num_epochs):
+    for epoch in trange(num_epochs):
         total_loss = 0
-        for step, batch in tqdm(enumerate(dataloader), desc=f"Training Epoch {epoch+1}", total=len(dataloader)):
+        for step, batch in enumerate(dataloader):
             batch = tuple(t.to(device) for t in batch)
             if use_features:
                 b_input_ids, b_input_mask, b_features, b_labels = batch

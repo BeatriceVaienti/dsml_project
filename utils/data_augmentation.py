@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import pandas as pd
 from collections import defaultdict
 import spacy
 
@@ -19,7 +18,6 @@ def tokenize_and_extract_features(text):
 
 def add_tokens_and_pos_counts(df):
     df = df.copy()  # Avoid modifying the input DataFrame
-    # Split the results of the tokenize_and_extract_features into separate columns directly
     df[['tokens', 'pos_counts']] = df['sentence'].apply(lambda x: pd.Series(tokenize_and_extract_features(x)))
     return df
 
@@ -37,26 +35,39 @@ def calculate_pos_frequencies(pos_counts, top_tags):
     total = sum(pos_counts.get(tag, 0) for tag in top_tags)  # Use get for safe access
     return {tag: (pos_counts.get(tag, 0) / total if total > 0 else 0) for tag in top_tags}
 
-def add_pos_frequencies(df):
+def add_pos_frequencies(df, top_tags):
     df = df.copy()  # Avoid modifying the input DataFrame
-    tokens_lists = df['tokens']
+    df['pos_frequencies'] = df['pos_counts'].apply(lambda x: calculate_pos_frequencies(x, top_tags))
+    for tag, i in zip(top_tags, range(len(top_tags))):
+        df['tag_' + str(i)] = df['pos_frequencies'].apply(lambda x: x.get(tag, 0))
+    return df
 
+def get_top_pos_tags(df, top_n=5):
+    tokens_lists = df['tokens']
     total_tag_counts = defaultdict(int)
     for tokens in tokens_lists:
         for token in tokens:
             if token.pos_ not in {'SPACE'}:
                 total_tag_counts[token.pos_] += 1
-    top_tags = sorted(total_tag_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-    top_tags = [tag for tag, _ in top_tags]
-    df['pos_frequencies'] = df['pos_counts'].apply(lambda x: calculate_pos_frequencies(x, top_tags))
-    for tag, i in zip(top_tags, range(len(top_tags))):
-        df['tag_'+str(i)] = df['pos_frequencies'].apply(lambda x: x.get(tag, 0))
+    sorted_tags = sorted(total_tag_counts.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    top_tags = [tag for tag, _ in sorted_tags]
+    return top_tags
+
+def augment_df(df, top_tags=None):
+    df = df.copy()
+    print('Adding tokens and pos counts')
+    df = add_tokens_and_pos_counts(df)
+    print('Adding n words')
+    df = add_n_words(df)
+    print('Adding avg word length')
+    df = add_avg_word_length_no_stopwords(df)
+    
+    if top_tags is None:
+        print('Calculating top POS tags from training dataset')
+        top_tags = get_top_pos_tags(df)
+    
+    print('Adding pos frequencies')
+    df = add_pos_frequencies(df, top_tags)
     return df
 
-def augment_df(df):
-    df = df.copy()
-    df = add_tokens_and_pos_counts(df)
-    df = add_n_words(df)
-    df = add_avg_word_length_no_stopwords(df)
-    df = add_pos_frequencies(df)
-    return df
+
