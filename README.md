@@ -52,12 +52,7 @@ python scripts/evaluate_bert.py --model [camembert|camembert-large|flaubert]
 
 ### Evaluation Results
 The best hyperparameters discovered during the tuning process as well as the logs with all the tested combinations of hyperparameters and their validation accuracy are detailed in the output files within the `best_hyperparameters_saved` folder. 
-## todo re organize the evaluation so that we will split the training set into three parts: training, validation and test. We will use the validation set to tune the hyperparameters and the test set to evaluate the model.
-this is how we will do it:
-- split the training set into training, validation and testset
-- tune the hyperparameters on the validation set
-- train the model on the training set
-- evaluate the model on the test set
+
 
 #### Hyperparameter Tuning Log
 The log file contains the validation accuracy for each combination of hyperparameters tested during the tuning process. The best hyperparameters are selected based on the highest validation accuracy achieved. In the following table, we show the accuracy obtained for each combination of hyperparameters tested and for each model.
