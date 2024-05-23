@@ -232,11 +232,11 @@ While the overall accuracy of the model is lower than the one obtained with the 
 
 
 # 5. Ensemble Model
-To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
+To obtain an overall better model we decided to build an ensemble model combining the CamemBERT and Flaubert models with (optionally) a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
 
-## 5.1 `ensemble_model`:Folder Structure
-The folder is structured in the following way:
+## 5.1 `ensemble_model/`: Folder Structure
+The folder containing all the necessary models and data for the ensemble model is structured in the following way:
 - `train/train_data.csv` contains the training data for the single models, obtained with a train-test split of the full labelled dataset using a 80-20 ratio and a random seed of 42.
 - `test/test_data.csv` contains the test data on which the ensemble model will be trained on.
 - `camembert/`, `flaubert/`, and `simple_nn/` folders contain the trained models for the CamemBERT, Flaubert, and Neural Network models, respectively. The models were trained exclusively on the train_data, ensuring no data leakage for the next step of training of the ensemble model. Given the size of the trained CamemBERT and Flaubert models, we decided to not include them in the repository.
@@ -244,16 +244,16 @@ The folder is structured in the following way:
 - `meta_gb/` contains the trained model for the LightGBM model used in the ensemble model. 
 - `predictions/` contains the predictions made by the single models on the test set.
 
-## 5.2 Training the Ensemble Model
+## 5.2 `train_ensemble.py`: Training the Ensemble Model
 
 To train the ensemble model, run:
 ```bash
 python scripts/train_ensemble.py --use_nn
 ```
 
-If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 4.
+If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) and with the best combination of augmented data, as found in Section 4.
 
-Given the computational intensity of re-training the single models each time from scratch, the training script uses a consistent train-test split of the full labelled dataset to train the single models. The predictions of the single models are then used to train the ensemble model. If the single models are already present in the ensemble_model folder, the train_ensemble.py function loads them and uses them to create predictions on the test set. The trained ensemble model will be saved in the `ensemble_model` folder.
+Given the computational intensity of re-training the single models each time from scratch, the training script uses a consistent train-test split of the full labelled dataset to train the single models. The predictions of the single models are then used to train the ensemble model. If the single models are already present in the `ensemble_model/` folder, the `train_ensemble.py` function loads them and uses them to create predictions on the test set. The trained ensemble model will be saved in the `ensemble_model/` folder.
 
 ## Combination Techniques: Neural Network and lightGBM
 To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:

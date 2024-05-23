@@ -1,20 +1,13 @@
 import sys
 import os
 sys.path.append('./')
-
 import pandas as pd
-import numpy as np
 import torch
-
+import numpy as np
 from utils.data_processing import drop_missing_remove_duplicates
 from utils.data_augmentation import augment_df, get_top_pos_tags
 from utils.label_encoding import get_encoded_y
-from utils.embeddings_generation import generate_embeddings
-
-from models.model_bert import initialize_model, get_optimizer
-from models.model_nn import SimpleNN
-from models.model_meta_nn import MetaNN, create_nn_dataloader, train_meta_nn, evaluate_meta_nn
-
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers import CamembertTokenizer, FlaubertTokenizer, CamembertForSequenceClassification, FlaubertForSequenceClassification
 from torch.optim import AdamW
@@ -23,13 +16,70 @@ import joblib
 import lightgbm as lgb
 from tqdm import tqdm, trange
 import json
+from utils.embeddings_generation import generate_embeddings
 import argparse
-
-from sklearn.preprocessing import StandardScaler
+from models.model_bert import initialize_model, get_optimizer
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
+import os
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from utils.data_processing import drop_missing_remove_duplicates
+
+class MetaNN(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(MetaNN, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+    
+    def forward(self, x):
+        out = self.fc1(x)
+        out = self.relu(out)
+        out = self.fc2(out)
+        return out
+
+
+def create_nn_dataloader(features, labels, batch_size):
+    dataset = TensorDataset(torch.tensor(features, dtype=torch.float32), torch.tensor(labels, dtype=torch.long))
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+def train_meta_nn(model, dataloader, criterion, optimizer, device, epochs):
+    model.train()
+    for epoch in range(epochs):
+        for batch_features, batch_labels in dataloader:
+            batch_features, batch_labels = batch_features.to(device), batch_labels.to(device)
+            outputs = model(batch_features)
+            loss = criterion(outputs, batch_labels)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+def evaluate_meta_nn(model, dataloader, device):
+    model.eval()
+    all_predictions = []
+    all_labels = []
+    with torch.no_grad():
+        for batch_features, batch_labels in dataloader:
+            batch_features, batch_labels = batch_features.to(device), batch_labels.to(device)
+            outputs = model(batch_features)
+            _, predictions = torch.max(outputs, 1)
+            all_predictions.extend(predictions.cpu().numpy())
+            all_labels.extend(batch_labels.cpu().numpy())
+    return np.array(all_predictions), np.array(all_labels)
+
+
+class SimpleNN(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(SimpleNN, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
 
 
 
@@ -98,9 +148,9 @@ def prepare_nn_data_with_embeddings(df, scaler, batch_size=32, shuffle=True, dev
 def train_model(model, dataloader, optimizer, device, scaler,  num_epochs=1, use_features=False, gradient_accumulation_steps=1):
     model.train()
     model.to(device)
-    for epoch in trange(num_epochs):
+    for epoch in range(num_epochs):
         total_loss = 0
-        for step, batch in enumerate(dataloader):
+        for step, batch in tqdm(enumerate(dataloader), desc=f"Training Epoch {epoch+1}", total=len(dataloader)):
             batch = tuple(t.to(device) for t in batch)
             if use_features:
                 b_input_ids, b_input_mask, b_features, b_labels = batch
@@ -149,11 +199,11 @@ def evaluate_nn(model, dataloader, device):
         for features, labels in dataloader:
             features, labels = features.to(device), labels.to(device)
             outputs = model(features)
-            _, preds = torch.max(outputs, 1)
-            predictions.extend(preds.cpu().numpy())
+            probs = torch.softmax(outputs, dim=1)  # Apply softmax to get probabilities
+            predictions.extend(probs.cpu().numpy())
             true_labels.extend(labels.cpu().numpy())
             torch.cuda.empty_cache()  # Clear cache after each batch
-    return predictions, true_labels
+    return np.array(predictions), np.array(true_labels)
 
     # Evaluate models
 def evaluate_model(model, dataloader, device, use_features=False):
@@ -180,7 +230,8 @@ def evaluate_model(model, dataloader, device, use_features=False):
     predictions = [item for sublist in predictions for item in sublist]
     true_labels = [item for sublist in true_labels for item in sublist]
     return np.array(predictions), np.array(true_labels)
-
+#### to add in repo start
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 def compute_metrics(predictions, true_labels):
     preds_flat = np.argmax(predictions, axis=1).flatten()
@@ -416,8 +467,8 @@ if __name__ == "__main__":
 
     meta_nn_param_grid = {
         'learning_rate': [0.001, 0.01, 0.1],
-        'hidden_size': [32, 64, 128],
-        'epochs': [20, 50, 100]
+        'hidden_size': [32, 64, 128, 264],
+        'epochs': [20, 50, 100, 150]
     }
 
     best_meta_nn_accuracy = 0

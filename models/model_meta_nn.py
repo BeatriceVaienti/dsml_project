@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
+import numpy as np
 
 class MetaNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
