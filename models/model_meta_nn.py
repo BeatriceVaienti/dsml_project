@@ -55,7 +55,7 @@ def evaluate_meta_nn(model, dataloader, device):
             batch_features = batch[0].float().to(device)  # Ensure features are float
             batch_labels = batch[1].to(device)
             outputs = model(batch_features)
-            _, preds = torch.max(outputs, 1)
-            predictions.extend(preds.cpu().numpy())
+            probs = torch.softmax(outputs, dim=1)  # Apply softmax to get probabilities
+            predictions.extend(probs.cpu().numpy())
             true_labels.extend(batch_labels.cpu().numpy())
     return np.array(predictions), np.array(true_labels)

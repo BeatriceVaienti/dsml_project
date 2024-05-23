@@ -418,13 +418,13 @@ if __name__ == "__main__":
 
     lgb_train = lgb.Dataset(train_features, label=true_labels)
 
-    param_grid_todo = {
+    param_grid = {
         'learning_rate': [0.01, 0.1, 0.2],
         'num_leaves': [31, 50, 100],
         'max_depth': [-1, 10, 20],
         'n_estimators': [50, 100, 200]
     }
-    param_grid = {
+    param_grid_old = {
         'learning_rate': [0.01],
         'num_leaves': [31],
         'max_depth': [20],
@@ -446,12 +446,12 @@ if __name__ == "__main__":
     true_labels_tensor = torch.tensor(true_labels, dtype=torch.long)
     meta_nn_dataloader = create_nn_dataloader(train_features_tensor, true_labels_tensor, batch_size=32)
 
-    meta_nn_param_grid_todo = {
+    meta_nn_param_grid = {
         'learning_rate': [0.0001, 0.001, 0.01, 0.1],
         'hidden_size': [32, 64, 128],
         'epochs': [20, 50, 100, 150, 200]
     }
-    meta_nn_param_grid = {
+    meta_nn_param_grid_old = {
         'learning_rate':  [0.01],
         'hidden_size': [64],
         'epochs': [ 150]
@@ -469,6 +469,7 @@ if __name__ == "__main__":
                 train_meta_nn(meta_nn_model, meta_nn_dataloader, criterion, optimizer, device, epochs)
 
                 meta_nn_predictions, true_labels = evaluate_meta_nn(meta_nn_model, meta_nn_dataloader, device)
+                meta_nn_predictions = np.argmax(meta_nn_predictions, axis=1)
                 meta_nn_accuracy = accuracy_score(true_labels, meta_nn_predictions)
                 print(f"MetaNN Model Accuracy: {meta_nn_accuracy} with params lr={lr}, hidden_size={hidden_size}, epochs={epochs}")
 
@@ -550,6 +551,7 @@ if __name__ == "__main__":
             ])
         meta_classifier_predictions = final_model.predict(eval_features)
     
+    print(meta_classifier_predictions.shape, meta_classifier_predictions[:5])
     meta_classifier_metrics = compute_metrics(meta_classifier_predictions, true_labels)
     meta_classifier_metrics_dict = {
         'accuracy': meta_classifier_metrics[0],
@@ -560,7 +562,17 @@ if __name__ == "__main__":
         'hyperparameters': best_meta_nn_params if isinstance(final_model, MetaNN) else best_lgb_params
     }
 
+        
     if isinstance(final_model, MetaNN):
         save_metrics(meta_classifier_metrics_dict, f'./ensemble_model/meta_nn/meta_nn{model_suffix}_metrics.json')
     else:
         save_metrics(meta_classifier_metrics_dict, f'./ensemble_model/meta_gb/meta_classifier{model_suffix}_metrics.json')
+
+    #save to file the wrong predictions
+    wrong_predictions = []
+    for i in range(len(meta_classifier_predictions)):
+        if np.argmax(meta_classifier_predictions[i]) != true_labels[i]:
+            wrong_predictions.append((int(i), int(np.argmax(meta_classifier_predictions[i])), int(true_labels[i])))
+
+    with open('./ensemble_model/meta_nn/wrong_predictions.json', 'w') as f:
+        json.dump(wrong_predictions, f)
