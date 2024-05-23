@@ -144,10 +144,26 @@ The third model that can be optionally added into our ensemble model is a neural
 
 To augment the data, we extracted the following attributes from the text:
 - Number of words
-- Average length of the words
+- Average length of the words (excluding the stopwords)
 - POS tags
 The functions used to augment the data can be found in the `utils/data_augmentation.py` file, and an interactive generation of the augmented data can be done in the jupyter notebook at `notebooks/data_augmentation`
 
+### 4.1.2 Number of Words
+In the following plot we show the boxplots of the number of words per sentence and the related CEFR difficulty in the labelled dataset:
+
+![Number of Words Boxplot](images/augmentation_n_words.png)
+
+We can notice a correlation between the number of words and the CEFR level of the sentences. In particular, the sentences with a higher CEFR level tend to have more words. As such, we decided to include the number of words as an additional feature for the neural network.
+
+### 4.1.3 Average Length of the Words
+The average length of the words is calculated as the sum of the length of the words in the sentence divided by the number of words, excluding the stopwords. In the following plot we show the boxplots of the average length of the words per sentence and the related CEFR difficulty in the labelled dataset:
+
+![Average Length of Words Boxplot](images/augmentation_avg_len.png)
+
+Also in this case, we can notice a correlation between the average length of the words and the CEFR level of the sentences. In particular, the sentences with a higher CEFR level tend to have longer words. As such, we decided to include the average length of the words as an additional feature for the neural network.
+
+### 4.1.4 POS Tags
+For the sake of readibility, the plots relative to POS tags are reported directly in the Jupyter Notebook `notebooks/data_augmentation`. The POS tags are extracted using the `nltk` library and the `nltk.pos_tag` function.
 
 ## 4.2 Embeddings
 Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
@@ -155,20 +171,20 @@ Embeddings for the sentences are generated using the selected transformer model 
 while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
 In Section 4.3.2 we will describe the process that we followed to choose the best model for the generation of the embeddings and the impact that the addition of the embedding has on the accuracy of the model.
 
-## 4.3 Determining the Best Hyperparameters for the Neural Network
-We performed a grid search with a k-fold cross-validation to determine the best hyperparameters for the neural network. To run the code for the evaluation, use:
+## 4.3 Model Optimization
+We performed a grid search with a k-fold cross-validation to determine the best combination of data to augment and the best hyperparameters for the neural network. To run the code for the evaluation, use:
 
 ```bash
 python scripts/evaluate_nn.py
 ```
 
-The hyperparameters tested are:
+The hyperparameters that we tested are:
 - learning_rates = [1e-4, 5e-5]
 - hidden_sizes = [32, 64]
 - batch_sizes = [16, 32, 64, 128]
 - epochs = [32, 64]
 
-
+For each of the following analyses we tested all the combinations of hyperparameters and kept the best ones to compare. After determining the most successfull combination of augmented data (POS tags) and the best model for the generation of the embeddings, we evaluated the best hyperparameters for the neural network.
 
 ### 4.3.1 POS tags impact on the accuracy
 Regarding the POS tags, we evaluated the impact on the accuracy of:
@@ -198,7 +214,17 @@ In the following plot we show the impact of the embeddings on the accuracy of th
 The plot shows that the best mean accuracy is obtained when using the __CamemBERT embeddings__. 
  The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
 
+ ### 4.3.3 Determining the Best Hyperparameters for the Neural Network
+The best hyperparameter found with the CamemBERT embeddings and the 5 most frequent POS tags are the following:
+- learning_rate = 0.0001
+- hidden_size = 64
+- batch_size = 16
+- epochs = 64
+
+The best mean accuracy obtained with these hyperparameters is __0.5385__. The results of the grid search with kfold cross-validation can be found in the `embeddings_evaluation/nn_hyperparameter_log_cam-5pos.json` file.
+
 ### Evaluation Results
+At last, we employed the best hyperparameters found to train a neural network on a train-test split of 80-20 and then predict on the test set. The confusion matrix obtained is shown below, along with the accuracy, precision, recall, and F1-score.
 
 ![NN Confusion Matrix](images/nn_matrix.png)
 
@@ -208,14 +234,26 @@ While the overall accuracy of the model is lower than the one obtained with the 
 # 5. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
-If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 4.
 
 ## 5.1 `ensemble_model`:Folder Structure
 The folder is structured in the following way:
 - `train/train_data.csv` contains the training data for the single models, obtained with a train-test split of the full labelled dataset using a 80-20 ratio and a random seed of 42.
 - `test/test_data.csv` contains the test data on which the ensemble model will be trained on.
-- `camembert/`, `flaubert/`, and `simple_nn` folders contain the trained models for the CamemBERT and Flaubert models, respectively.
+- `camembert/`, `flaubert/`, and `simple_nn/` folders contain the trained models for the CamemBERT, Flaubert, and Neural Network models, respectively. The models were trained exclusively on the train_data, ensuring no data leakage for the next step of training of the ensemble model. Given the size of the trained CamemBERT and Flaubert models, we decided to not include them in the repository.
+- `meta_nn/` contains the trained model for the Neural Network used in the ensemble model.
+- `meta_gb/` contains the trained model for the LightGBM model used in the ensemble model. 
+- `predictions/` contains the predictions made by the single models on the test set.
 
+## 5.2 Training the Ensemble Model
+
+To train the ensemble model, run:
+```bash
+python scripts/train_ensemble.py --use_nn
+```
+
+If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 4.
+
+Given the computational intensity of re-training the single models each time from scratch, the training script uses a consistent train-test split of the full labelled dataset to train the single models. The predictions of the single models are then used to train the ensemble model. If the single models are already present in the ensemble_model folder, the train_ensemble.py function loads them and uses them to create predictions on the test set. The trained ensemble model will be saved in the `ensemble_model` folder.
 
 ## Combination Techniques: Neural Network and lightGBM
 To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
