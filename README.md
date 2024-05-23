@@ -25,12 +25,17 @@ Trained models are saved in the `models_saved` folder.
 report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
 
 table:
-|      | Logistic Regression | KNN | Decision Tree | Random Forest | Other technique |
-|------|--------------------|-----|--------------|---------------|-----------------|
-| Precision | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
-| Recall | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
-| F1 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
-| Accuracy | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+           LogisticRegression  KNeighborsClassifier  DecisionTreeClassifier  \
+Precision                0.43                  0.37                    0.32   
+Recall                   0.43                  0.28                    0.31   
+F1-Score                 0.43                  0.26                    0.31   
+Accuracy                 0.43                  0.29                    0.31   
+
+           RandomForestClassifier  Tuned KNeighborsClassifier  
+Precision                    0.39                       0.43  
+Recall                       0.40                       0.37  
+F1-Score                     0.39                       0.36  
+Accuracy                     0.40                       0.37
 
 Answer the following questions
 - Which is the best model?
@@ -336,25 +341,30 @@ adding synthetic data
 
 # Streamlit App: A Tandem Matching App
 
-## Introduction
-The current state of the art in tandem language exchange apps leverages advanced technology and social networking to facilitate language learning through mutual practice and cultural exchange. Leading platforms like Tandem, HelloTalk, Speaky, and ConversationExchange offer diverse features such as text, audio, and video chat, translation tools, and community forums. These apps use AI and machine learning to enhance user experience through personalized content and real-time corrections. Gamification elements like streaks, badges, and leaderboards are incorporated to maintain user engagement, while intuitive interfaces and seamless communication features make these apps user-friendly and effective.
+## Introduction and State of the Art 
+The current state of the art in tandem language exchange apps targets advanced technology and social networking to facilitate language learning through mutual practice. Leading platforms like Tandem, HelloTalk, Speaky, and ConversationExchange offer diverse features such as text, audio, video chat, translation tools, and community forums. These apps use AI and machine learning to enhance the user experience with personalized content. Gamification elements like badges and leaderboards are incorporated to maintain user engagement, while intuitive interfaces make these apps user-friendly.
 
-Despite their strengths, there is room for improvement in tandem language exchange apps. Future advancements could include more immersive experiences using virtual reality (VR) and augmented reality (AR), allowing users to simulate real-life interactions in virtual environments. Further integration with formal education could provide structured learning paths and accreditation, enhancing the educational value of these platforms. Additionally, ongoing improvements in AI could lead to even more personalized learning experiences tailored to individual user needs and progress. By addressing these areas, tandem language exchange apps can continue to evolve and offer even more innovative and effective language learning solutions.
+Despite their strengths, there is room for improvement: future advancements could include more immersive experiences using virtual and augmented reality, allowing users to simulate real-life interactions. Further integration with formal education could provide structured learning paths and accreditation, enhancing the educational value of these platforms for partnership with universities and research institutes. Additionally, ongoing improvements in AI could lead to even more personalized learning experiences tailored to individual user needs and progress.
+Our preliminary app addresses these last two areas, for tandem language apps to offer even more effective cultural exchange and learning solutions.
 
 ## Our project
-For our project, we decided to focus on the language matching aspect of tandem language exchange apps. In particular, we employed our models to predict the CEFR level of French sentences to facilitate the matching of language learners with partners of similar proficiency.
+For our project, we chose to concentrate on enhancing the language matching feature of tandem language exchange applications. Specifically, we utilized our models to assess the CEFR level of French sentences input by users via an interactive user interface. This assessment aids in determining the users' proficiency level. The primary goal is to streamline the process of pairing language learners with partners who have similar proficiency levels, enhancing the learning process since the beginning.
 
-![App 1](images/AppTest_1.PNG)
-
-The Proof of Concept of our application was tested with the PSI tandem group, to explore how this kind of app could be useful for university students and researchers. 
+![App 1](images/AppTest_1.PNG) 
 
 ## Novelty
-- check the coherence of the answer and the question. If we write in a different language or the answer is not coherent (showing that the user didn't understand the question), the app will suggest to the user to ask the question again or to write in the same language. 
-- The test is progressive: the questions are asked in a progressively more difficult level. Moreover, if the user answers with a level that is already higher than the question the test jumps to the next level.
+Unlike leading platforms such as Tandem, which do not assess a user's initial proficiency level for comparison with future progress after partner exchanges (https://www.tandem.net/), our Berrevaient's French proficiency test evaluates users' starting levels. Using a Streamlit application, our test delivers questions that progressively increase in difficulty. Moreover, the application dynamically adapts to the user's capabilities: if a user's response suggests a higher proficiency than the current question level, the test automatically advances to the predicted and more appropriate level. Additionally, it ensures the relevance of each response by checking the coherence between the user's answers and the questions. This system prevents inaccurate proficiency assessments caused by responses in the wrong language, missing keywords, typographical errors, or irrelevant answers. In cases where the relevance score of an answer does not meet the required standards, the app prompts users to answer the question again:
 
+![App 1](images/AppTest_3.PNG) 
 
-## Conclusion
-This method not only makes the testing process more dynamic but also more accurately assesses the user's true language proficiency by adapting to their capabilities.
-This approach ensures that unless the user demonstrates knowledge above A1, they are not advanced to a higher level, and if they fail to reach even A1, they are still reported at A1 since there isn't a lower level defined in your settings.
-Partnering with existing educational platforms or content creators could allow you to incorporate their materials into your app legally and ethically.
-# Conclusion
+This adaptive approach not only makes the testing process more engaging but also yields a more accurate assessment of a user's true language proficiency. Our test is specifically designed for non-native speakers:
+
+![App 1](images/AppTest_2.PNG) 
+
+The only personal information required is the user's country of selection, ensuring respect for gender diversity in tandem matching. 
+
+## Partnership
+We have collaborated with the Paul Scherrer Institute's tandem group to pilot our proof of concept and explore how this app could foster cultural exchanges among university students and researchers who face challenges in finding suitable language partners. In our YouTube video presentation, we demonstrate the quality and effectiveness of our implementation.
+
+## Future work
+By partnering with established educational platforms or content creators, we aim to legally and ethically integrate their materials into our app. This collaboration would enable us to tailor learning content based on a "reading journal" of recorded conversations with partners, enhancing the educational experience. 

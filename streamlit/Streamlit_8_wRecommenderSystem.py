@@ -78,7 +78,7 @@ def process_answer():
     st.session_state.relevance_score = compute_similarity(st.session_state.question, st.session_state.user_answer)
     st.write(f"Relevance score: {st.session_state.relevance_score:.2f}")
 
-    if st.session_state.relevance_score < 0.3:
+    if st.session_state.relevance_score < 0.5:
         st.write("Your answer does not seem relevant to the question. Please try again.")
         return
     
