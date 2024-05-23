@@ -237,7 +237,7 @@ if __name__ == "__main__":
     test_df_augmented = augment_df(test_df, top_tags)
 
     # Split test data into subtest and evaluation sets
-    subtest_df, evaluation_df = train_test_split(test_df_augmented, test_size=0.4, random_state=42)
+    subtest_df, evaluation_df = train_test_split(test_df_augmented, test_size=0.3, random_state=42)
 
     # Scaling
     # Check if the scaler already exists

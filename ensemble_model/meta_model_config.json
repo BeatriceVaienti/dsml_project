@@ -4,6 +4,6 @@
     "best_meta_nn_params": {
         "learning_rate": 0.01,
         "hidden_size": 128,
-        "epochs": 100
+        "epochs": 150
     }
 }
