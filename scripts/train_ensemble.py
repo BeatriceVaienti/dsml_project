@@ -181,8 +181,11 @@ def evaluate_model(model, dataloader, device, use_features=False):
     true_labels = [item for sublist in true_labels for item in sublist]
     return np.array(predictions), np.array(true_labels)
 
-
 def compute_metrics(predictions, true_labels):
+    # Verify the shape of predictions
+    print("Shape of predictions:", predictions.shape)
+    print("First 5 predictions:", predictions[:5])
+    
     preds_flat = np.argmax(predictions, axis=1).flatten()
     labels_flat = true_labels.flatten()
     accuracy = accuracy_score(labels_flat, preds_flat)
@@ -197,6 +200,7 @@ def save_metrics(metrics, filepath):
         for key, value in metrics.items():
             f.write(f"{key}: {value}\n")
         f.write(f"Confusion Matrix:\n{metrics['conf_matrix']}\n")
+
 
 if __name__ == "__main__":
     args = get_arguments()
@@ -232,6 +236,9 @@ if __name__ == "__main__":
     # Augment the test data using the same POS tags
     test_df_augmented = augment_df(test_df, top_tags)
 
+    # Split test data into subtest and evaluation sets
+    subtest_df, evaluation_df = train_test_split(test_df_augmented, test_size=0.3, random_state=42)
+
     # Scaling
     # Check if the scaler already exists
     feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
@@ -243,13 +250,14 @@ if __name__ == "__main__":
         scaler.fit(train_df_augmented[feature_columns].values)
         joblib.dump(scaler, scaler_path)
         
-
     train_df_augmented[feature_columns] = scaler.transform(train_df_augmented[feature_columns].values)
-    test_df_augmented[feature_columns] = scaler.transform(test_df_augmented[feature_columns].values)
+    subtest_df[feature_columns] = scaler.transform(subtest_df[feature_columns].values)
+    evaluation_df[feature_columns] = scaler.transform(evaluation_df[feature_columns].values)
 
     # Generate embeddings
     train_df_augmented, embedding_size = generate_embeddings(train_df_augmented, chosen_tokenizer='camembert')
-    test_df_augmented, _ = generate_embeddings(test_df_augmented, chosen_tokenizer='camembert')
+    subtest_df, _ = generate_embeddings(subtest_df, chosen_tokenizer='camembert')
+    evaluation_df, _ = generate_embeddings(evaluation_df, chosen_tokenizer='camembert')
 
     # Prepare data loaders
     camembert_tokenizer = CamembertTokenizer.from_pretrained('camembert-base')
@@ -277,7 +285,6 @@ if __name__ == "__main__":
     flaubert_model_path = './ensemble_model/flaubert'
     nn_model_path = './ensemble_model/simple_nn/simple_nn.pth'
 
-
     if os.path.exists(flaubert_model_path+'/config.json'):
         flaubert_model = FlaubertForSequenceClassification.from_pretrained(flaubert_model_path).to(device)
     else:
@@ -290,7 +297,7 @@ if __name__ == "__main__":
 
         flaubert_model.save_pretrained(flaubert_model_path)
 
-    if os.path.exists(camembert_model_path+'/config.json') :
+    if os.path.exists(camembert_model_path+'/config.json'):
         camembert_model = CamembertForSequenceClassification.from_pretrained(camembert_model_path).to(device)
     else:
         # Initialize and train models
@@ -301,7 +308,6 @@ if __name__ == "__main__":
         train_model(camembert_model, camembert_dataloader, camembert_optimizer, device, grad_scaler, num_epochs=best_hyperparameters_camembert['epochs'], use_features=args.use_nn, gradient_accumulation_steps=gradient_accumulation_steps_camembert)
         camembert_model.save_pretrained(camembert_model_path)
 
-    
     if not os.path.exists(flaubert_model_path+'/tokenizer_config.json'):
         print('Saving tokenizer flaubert...')
         flaubert_tokenizer.save_pretrained(f'./ensemble_model/flaubert')
@@ -309,15 +315,14 @@ if __name__ == "__main__":
     if not os.path.exists(camembert_model_path+'/tokenizer_config.json'):
         print('Saving tokenizer camembert...')
         camembert_tokenizer.save_pretrained(f'./ensemble_model/camembert')
-    
+
     # Train SimpleNN
-            
     nn_hyperparameters = {
-            "learning_rate": 0.0001,
-            "hidden_size": 64,
-            "batch_size": 32,
-            "epochs": 64
-        }
+        "learning_rate": 0.0001,
+        "hidden_size": 64,
+        "batch_size": 32,
+        "epochs": 64
+    }
     
     if args.use_nn:
         if os.path.exists(nn_model_path):
@@ -328,7 +333,6 @@ if __name__ == "__main__":
                 nn_model.load_state_dict(torch.load(nn_model_path, map_location=torch.device('cpu')))
         else:
             print('Training new nn...')
-
             nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size=nn_hyperparameters['hidden_size'], num_classes=6).to(device)
             nn_optimizer = AdamW(nn_model.parameters(), lr=nn_hyperparameters['learning_rate'])
             nn_dataloader = prepare_nn_data_with_embeddings(train_df_augmented, scaler, batch_size=nn_hyperparameters['batch_size'], device=device)
@@ -337,23 +341,26 @@ if __name__ == "__main__":
             # Save SimpleNN model
             torch.save(nn_model.state_dict(), nn_model_path)
 
-    # Prepare data loader for evaluation on the entire test set
-    camembert_eval_dataloader = prepare_data(test_df_augmented, camembert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
-    flaubert_eval_dataloader = prepare_data(test_df_augmented, flaubert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
+    # Prepare data loaders for subtest and evaluation sets
+    camembert_subtest_dataloader = prepare_data(subtest_df, camembert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
+    flaubert_subtest_dataloader = prepare_data(subtest_df, flaubert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
+    
+    camembert_eval_dataloader = prepare_data(evaluation_df, camembert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
+    flaubert_eval_dataloader = prepare_data(evaluation_df, flaubert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
     
     # Load pre-trained models
     camembert_model = CamembertForSequenceClassification.from_pretrained(camembert_model_path).to(device)
     flaubert_model = FlaubertForSequenceClassification.from_pretrained(flaubert_model_path).to(device)
     
     if args.use_nn:
-        nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size = nn_hyperparameters['hidden_size'], num_classes=6).to(device)
+        nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size=nn_hyperparameters['hidden_size'], num_classes=6).to(device)
         if torch.cuda.is_available():
             nn_model.load_state_dict(torch.load(nn_model_path))
         else:
             nn_model.load_state_dict(torch.load(nn_model_path, map_location=torch.device('cpu')))
 
-    print('Evaluating Camembert model...')
-    camembert_predictions, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
+    print('Evaluating Camembert model on subtest...')
+    camembert_predictions, true_labels = evaluate_model(camembert_model, camembert_subtest_dataloader, device, use_features=args.use_nn)
     camembert_metrics = compute_metrics(camembert_predictions, true_labels)
     camembert_metrics_dict = {
         'accuracy': camembert_metrics[0],
@@ -362,10 +369,10 @@ if __name__ == "__main__":
         'f1': camembert_metrics[3],
         'conf_matrix': camembert_metrics[4]
     }
-    save_metrics(camembert_metrics_dict, './ensemble_model/camembert/camembert_metrics.txt')
-    
-    print('Evaluating Flaubert model...')
-    flaubert_predictions, true_labels = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
+    save_metrics(camembert_metrics_dict, './ensemble_model/camembert/camembert_subtest_metrics.txt')
+
+    print('Evaluating Flaubert model on subtest...')
+    flaubert_predictions, true_labels = evaluate_model(flaubert_model, flaubert_subtest_dataloader, device, use_features=args.use_nn)
     flaubert_metrics = compute_metrics(flaubert_predictions, true_labels)
     flaubert_metrics_dict = {
         'accuracy': flaubert_metrics[0],
@@ -374,7 +381,7 @@ if __name__ == "__main__":
         'f1': flaubert_metrics[3],
         'conf_matrix': flaubert_metrics[4]
     }
-    save_metrics(flaubert_metrics_dict, './ensemble_model/flaubert/flaubert_metrics.txt')
+    save_metrics(flaubert_metrics_dict, './ensemble_model/flaubert/flaubert_subtest_metrics.txt')
 
     camembert_accuracy = accuracy_score(true_labels, np.argmax(camembert_predictions, axis=1))
     flaubert_accuracy = accuracy_score(true_labels, np.argmax(flaubert_predictions, axis=1))
@@ -382,9 +389,10 @@ if __name__ == "__main__":
     print(f"Flaubert Model Accuracy: {flaubert_accuracy}")
 
     if args.use_nn:
-        print('Evaluating simple NN model...')
-        nn_eval_dataloader = prepare_nn_data_with_embeddings(test_df_augmented, scaler, batch_size=32, shuffle=False, device=device)
-        nn_predictions, true_labels = evaluate_nn(nn_model, nn_eval_dataloader, device)
+        print('Evaluating simple NN model on subtest...')
+        nn_subtest_dataloader = prepare_nn_data_with_embeddings(subtest_df, scaler, batch_size=32, shuffle=False, device=device)
+        nn_eval_dataloader = prepare_nn_data_with_embeddings(evaluation_df, scaler, batch_size=32, shuffle=False, device=device)
+        nn_predictions, true_labels = evaluate_nn(nn_model, nn_subtest_dataloader, device)
         
         nn_metrics = compute_metrics(nn_predictions, true_labels)
         nn_metrics_dict = {
@@ -394,7 +402,7 @@ if __name__ == "__main__":
             'f1': nn_metrics[3],
             'conf_matrix': nn_metrics[4]
         }
-        save_metrics(nn_metrics_dict, './ensemble_model/simple_nn/nn_metrics.txt')
+        save_metrics(nn_metrics_dict, './ensemble_model/simple_nn/nn_subtest_metrics.txt')
         nn_accuracy = accuracy_score(true_labels, np.argmax(nn_predictions, axis=1))
         print(f"SimpleNN Model Accuracy: {nn_accuracy}")
         train_features = np.hstack([
@@ -409,13 +417,19 @@ if __name__ == "__main__":
         ])
 
     lgb_train = lgb.Dataset(train_features, label=true_labels)
+
     param_grid = {
         'learning_rate': [0.01, 0.1, 0.2],
         'num_leaves': [31, 50, 100],
         'max_depth': [-1, 10, 20],
         'n_estimators': [50, 100, 200]
     }
-
+    param_grid_old = {
+        'learning_rate': [0.01],
+        'num_leaves': [31],
+        'max_depth': [20],
+        'n_estimators': [50]
+    }
     lgb_estimator = lgb.LGBMClassifier(objective='multiclass', num_class=6, metric='multi_logloss', boosting_type='gbdt', verbose=-1)
     grid_search = GridSearchCV(estimator=lgb_estimator, param_grid=param_grid, cv=3, scoring='accuracy', verbose=1)
     grid_search.fit(train_features, true_labels)
@@ -423,9 +437,11 @@ if __name__ == "__main__":
     best_lgb_params = grid_search.best_params_
     print(f"Best LightGBM parameters found: {best_lgb_params}")
 
+    # Train the final LightGBM model with the best parameters
     best_lgb_model = lgb.LGBMClassifier(**best_lgb_params, objective='multiclass', num_class=6, metric='multi_logloss', boosting_type='gbdt', verbose=-1)
     best_lgb_model.fit(train_features, true_labels)
 
+    # Prepare data for MetaNN
     train_features_tensor = torch.tensor(train_features, dtype=torch.float32)
     true_labels_tensor = torch.tensor(true_labels, dtype=torch.long)
     meta_nn_dataloader = create_nn_dataloader(train_features_tensor, true_labels_tensor, batch_size=32)
@@ -435,7 +451,11 @@ if __name__ == "__main__":
         'hidden_size': [32, 64, 128],
         'epochs': [20, 50, 100, 150, 200]
     }
-
+    meta_nn_param_grid_old = {
+        'learning_rate':  [0.01],
+        'hidden_size': [64],
+        'epochs': [ 150]
+    }
     best_meta_nn_accuracy = 0
     best_meta_nn_params = {}
     best_meta_nn_model = None
@@ -449,6 +469,7 @@ if __name__ == "__main__":
                 train_meta_nn(meta_nn_model, meta_nn_dataloader, criterion, optimizer, device, epochs)
 
                 meta_nn_predictions, true_labels = evaluate_meta_nn(meta_nn_model, meta_nn_dataloader, device)
+                meta_nn_predictions = np.argmax(meta_nn_predictions, axis=1)
                 meta_nn_accuracy = accuracy_score(true_labels, meta_nn_predictions)
                 print(f"MetaNN Model Accuracy: {meta_nn_accuracy} with params lr={lr}, hidden_size={hidden_size}, epochs={epochs}")
 
@@ -458,26 +479,79 @@ if __name__ == "__main__":
                     best_meta_nn_model = meta_nn_model
 
     print(f"Best MetaNN parameters found: {best_meta_nn_params}")
-
+    # Compare the best models from LightGBM and MetaNN
     if best_meta_nn_accuracy > grid_search.best_score_:
         print(f"Selecting MetaNN as the final model with accuracy: {best_meta_nn_accuracy}")
         final_model = best_meta_nn_model
         model_suffix = '_with_features' if args.use_nn else ''
-        torch.save(final_model.state_dict(), f'./ensemble_model/meta_nn/meta_nn{model_suffix}.pth')
-        meta_model_hyperparameters = best_meta_nn_params
+        meta_model_path = f'./ensemble_model/meta_nn/meta_nn{model_suffix}.pth'
+        torch.save(final_model.state_dict(), meta_model_path)
+        meta_model_config = {
+            "type": "nn",
+            "path": meta_model_path,
+            "best_meta_nn_params": best_meta_nn_params
+        }
     else:
         print(f"Selecting LightGBM as the final model with accuracy: {grid_search.best_score_}")
         final_model = best_lgb_model
         model_suffix = '_with_features' if args.use_nn else ''
-        best_lgb_model.booster_.save_model(f'./ensemble_model/meta_gb/meta_classifier{model_suffix}.txt')
-        meta_model_hyperparameters = best_lgb_params
+        meta_model_path = f'./ensemble_model/meta_gb/meta_classifier{model_suffix}.txt'
+        best_lgb_model.booster_.save_model(meta_model_path)
+        meta_model_config = {
+            "type": "lgb",
+            "path": meta_model_path,
+            "best_meta_nn_params": None
+        }
 
-    # Evaluate Meta Classifier
+    # Save the meta model configuration
+    meta_model_config_path = './ensemble_model/meta_model_config.json'
+    with open(meta_model_config_path, 'w') as f:
+        json.dump(meta_model_config, f, indent=4)
+
+    # Evaluate the final model on the evaluation set
+    print('Evaluating final model on evaluation set...')
     if isinstance(final_model, MetaNN):
-        meta_classifier_predictions, true_labels = evaluate_meta_nn(final_model, meta_nn_dataloader, device)
-    else:
-        meta_classifier_predictions = final_model.predict(train_features)
+        # Prepare the evaluation set for MetaNN
+        camembert_predictions_eval, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
+        flaubert_predictions_eval, _ = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
+        
+        if args.use_nn:
+            nn_predictions_eval, _ = evaluate_nn(nn_model, nn_eval_dataloader, device)
+            eval_features = np.hstack([
+                np.argmax(camembert_predictions_eval, axis=1).reshape(-1, 1),
+                np.argmax(flaubert_predictions_eval, axis=1).reshape(-1, 1),
+                np.argmax(nn_predictions_eval, axis=1).reshape(-1, 1)
+            ])
+        else:
+            eval_features = np.hstack([
+                np.argmax(camembert_predictions_eval, axis=1).reshape(-1, 1),
+                np.argmax(flaubert_predictions_eval, axis=1).reshape(-1, 1)
+            ])
 
+        eval_features_tensor = torch.tensor(eval_features, dtype=torch.float32)
+        eval_labels_tensor = torch.tensor(true_labels, dtype=torch.long)
+        eval_nn_dataloader = create_nn_dataloader(eval_features_tensor, eval_labels_tensor, batch_size=32)
+        
+        meta_classifier_predictions, true_labels = evaluate_meta_nn(final_model, eval_nn_dataloader, device)
+    else:
+        camembert_predictions_eval, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
+        flaubert_predictions_eval, _ = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
+        
+        if args.use_nn:
+            nn_predictions_eval, _ = evaluate_nn(nn_model, nn_eval_dataloader, device)
+            eval_features = np.hstack([
+                np.argmax(camembert_predictions_eval, axis=1).reshape(-1, 1),
+                np.argmax(flaubert_predictions_eval, axis=1).reshape(-1, 1),
+                np.argmax(nn_predictions_eval, axis=1).reshape(-1, 1)
+            ])
+        else:
+            eval_features = np.hstack([
+                np.argmax(camembert_predictions_eval, axis=1).reshape(-1, 1),
+                np.argmax(flaubert_predictions_eval, axis=1).reshape(-1, 1)
+            ])
+        meta_classifier_predictions = final_model.predict(eval_features)
+    
+    print(meta_classifier_predictions.shape, meta_classifier_predictions[:5])
     meta_classifier_metrics = compute_metrics(meta_classifier_predictions, true_labels)
     meta_classifier_metrics_dict = {
         'accuracy': meta_classifier_metrics[0],
@@ -485,28 +559,20 @@ if __name__ == "__main__":
         'recall': meta_classifier_metrics[2],
         'f1': meta_classifier_metrics[3],
         'conf_matrix': meta_classifier_metrics[4].tolist(),
-        'hyperparameters': meta_model_hyperparameters
+        'hyperparameters': best_meta_nn_params if isinstance(final_model, MetaNN) else best_lgb_params
     }
-    
+
+        
     if isinstance(final_model, MetaNN):
         save_metrics(meta_classifier_metrics_dict, f'./ensemble_model/meta_nn/meta_nn{model_suffix}_metrics.json')
     else:
         save_metrics(meta_classifier_metrics_dict, f'./ensemble_model/meta_gb/meta_classifier{model_suffix}_metrics.json')
 
-    # Save wrongly predicted sentences
+    #save to file the wrong predictions
     wrong_predictions = []
-    sentences = test_df_augmented['sentence'].tolist()
-    true_labels_flat = true_labels.flatten()
-    meta_classifier_preds_flat = np.argmax(meta_classifier_predictions, axis=1).flatten()
+    for i in range(len(meta_classifier_predictions)):
+        if np.argmax(meta_classifier_predictions[i]) != true_labels[i]:
+            wrong_predictions.append((int(i), int(np.argmax(meta_classifier_predictions[i])), int(true_labels[i])))
 
-    for i, (true_label, pred_label) in enumerate(zip(true_labels_flat, meta_classifier_preds_flat)):
-        if true_label != pred_label:
-            wrong_predictions.append({
-                'sentence': sentences[i],
-                'true_label': int(true_label),
-                'predicted_label': int(pred_label)
-            })
-
-    wrong_predictions_filepath = f'./ensemble_model/meta_nn/wrong_predictions{model_suffix}.json' if isinstance(final_model, MetaNN) else f'./ensemble_model/meta_gb/wrong_predictions{model_suffix}.json'
-    with open(wrong_predictions_filepath, 'w') as f:
-        json.dump(wrong_predictions, f, indent=4)
+    with open('./ensemble_model/meta_nn/wrong_predictions.json', 'w') as f:
+        json.dump(wrong_predictions, f)

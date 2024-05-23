@@ -1,11 +1,15 @@
 import os
+import sys
 import torch
+sys.path.append('./')
 import pandas as pd
 import numpy as np
 import joblib
 import json
 
 from transformers import CamembertTokenizer, FlaubertTokenizer, CamembertForSequenceClassification, FlaubertForSequenceClassification
+from utils.data_processing import drop_missing_remove_duplicates
+from utils.data_augmentation import augment_df, get_top_pos_tags
 from utils.label_encoding import get_encoded_y
 from utils.embeddings_generation import generate_embeddings
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
@@ -111,12 +115,12 @@ def evaluate_nn(model, dataloader, device):
             torch.cuda.empty_cache()  # Clear cache after each batch
     return np.array(predictions)
 
-def load_meta_model(meta_model_path, meta_model_type):
+def load_meta_model(meta_model_path, meta_model_type, input_size, best_meta_nn_params=None):
     if meta_model_type == 'lgb':
         import lightgbm as lgb
         meta_model = lgb.Booster(model_file=meta_model_path)
     elif meta_model_type == 'nn':
-        meta_model = MetaNN(input_size=train_features.shape[1], hidden_size=best_meta_nn_params['hidden_size'], num_classes=6).to(device)
+        meta_model = MetaNN(input_size=input_size, hidden_size=best_meta_nn_params['hidden_size'], num_classes=6).to(device)
         if torch.cuda.is_available():
             meta_model.load_state_dict(torch.load(meta_model_path))
         else:
@@ -169,9 +173,16 @@ if __name__ == "__main__":
         np.argmax(nn_predictions, axis=1).reshape(-1, 1)
     ])
 
-    meta_model_path = './ensemble_model/meta_nn/meta_nn.pth'  # Update the path if using LightGBM
-    meta_model_type = 'nn'  # or 'lgb' if using LightGBM
-    meta_model = load_meta_model(meta_model_path, meta_model_type)
+    # Load meta model parameters and hyperparameters
+    meta_model_config_path = './ensemble_model/meta_model_config.json'
+    with open(meta_model_config_path, 'r') as f:
+        meta_model_config = json.load(f)
+    meta_model_type = meta_model_config['type']
+    best_meta_nn_params = meta_model_config.get('best_meta_nn_params')
+    input_size = test_features.shape[1]
+
+    meta_model_path = meta_model_config['path']
+    meta_model = load_meta_model(meta_model_path, meta_model_type, input_size, best_meta_nn_params)
 
     if meta_model_type == 'nn':
         test_features_tensor = torch.tensor(test_features, dtype=torch.float32)

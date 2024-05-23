@@ -16,6 +16,21 @@ from utils.label_encoding import get_encoded_y, get_label_encoder
 import torch.nn as nn
 import argparse
 
+def evaluate_nn(model, dataloader, device):
+    model.eval()
+    model.to(device)
+    predictions, true_labels = [], []
+    with torch.no_grad():
+        for features, labels in dataloader:
+            features, labels = features.to(device), labels.to(device)
+            outputs = model(features)
+            probs = torch.softmax(outputs, dim=1)  # Apply softmax to get probabilities
+            predictions.extend(probs.cpu().numpy())
+            true_labels.extend(labels.cpu().numpy())
+            torch.cuda.empty_cache()  # Clear cache after each batch
+    return np.array(predictions), np.array(true_labels)
+
+
 class SimpleNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
         super(SimpleNN, self).__init__()
@@ -124,24 +139,27 @@ def load_models_and_data(meta_model_choice):
     flaubert_tokenizer = FlaubertTokenizer.from_pretrained('flaubert/flaubert_base_cased')
 
     # Load models
-    camembert_model = CamembertForSequenceClassification.from_pretrained('ensemble_model/camembert_full').to(device)
-    flaubert_model = FlaubertForSequenceClassification.from_pretrained('ensemble_model/flaubert_full').to(device)
+    camembert_model = CamembertForSequenceClassification.from_pretrained('ensemble_model/camembert').to(device)
+    flaubert_model = FlaubertForSequenceClassification.from_pretrained('ensemble_model/flaubert').to(device)
     embedding_size = 768 
     nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size=64, num_classes=6).to(device)
-    nn_model.load_state_dict(torch.load('ensemble_model/simple_nn.pth'))
+    if torch.cuda.is_available():
+        nn_model.load_state_dict(torch.load('ensemble_model/simple_nn/simple_nn.pth'))
+    else:
+        nn_model.load_state_dict(torch.load('ensemble_model/simple_nn/simple_nn.pth', map_location=torch.device('cpu')))
 
     # Load scaler
-    scaler = joblib.load('ensemble_model/scaler.pkl')
+    scaler = joblib.load('ensemble_model/simple_nn/scaler.pkl')
 
     # Load meta model based on choice
     if meta_model_choice == 'lgb':
-        meta_model = lgb.Booster(model_file='ensemble_model/meta_classifier_with_features.txt')
+        meta_model = lgb.Booster(model_file='ensemble_model/meta_gb/meta_classifier_with_features.txt')
     elif meta_model_choice == 'nn':
         meta_model = MetaNN(input_size=3, hidden_size=128, num_classes=6).to(device)
-        meta_model.load_state_dict(torch.load('ensemble_model/meta_nn_with_features.pth'))
+        meta_model.load_state_dict(torch.load('ensemble_model/meta_nn/meta_nn_with_features.pth'))
 
     # Load additional files
-    top_pos_tags = load_top_pos_tags('ensemble_model/top_pos_tags.json')
+    top_pos_tags = load_top_pos_tags('ensemble_model/simple_nn/top_pos_tags.json')
 
     return camembert_tokenizer, flaubert_tokenizer, camembert_model, flaubert_model, nn_model, scaler, meta_model, top_pos_tags, device
 
@@ -159,9 +177,9 @@ def inference(df, camembert_tokenizer, flaubert_tokenizer, camembert_model, flau
 
 
     test_features = np.hstack([
-        camembert_predictions.reshape(-1, 1),
-        flaubert_predictions.reshape(-1, 1),
-        nn_predictions.reshape(-1, 1)
+        np.argmax(camembert_predictions, axis=1).reshape(-1, 1),
+        np.argmax(flaubert_predictions, axis=1).reshape(-1, 1),
+        np.argmax(nn_predictions, axis=1).reshape(-1, 1)
     ])
 
     if meta_model_choice == 'lgb':
@@ -199,4 +217,4 @@ if __name__ == "__main__":
     unlabelled_df['difficulty'] = decoded_predictions
 
     # Save the predictions
-    unlabelled_df[['id', 'difficulty']].to_csv(f'./kaggle_submissions/meta_model_predictions.csv', index=False)
+    unlabelled_df[['id', 'difficulty']].to_csv(f'./kaggle_submissions/meta_model_predictions_new.csv', index=False)
