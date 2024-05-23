@@ -11,7 +11,7 @@ This repository is thought with reusability in mind. As such, the code is organi
 The organization of the code is as follows:
 - The `models` folder contains the code for initializing and configuring models, and in particular:
     - `model_bert.py`: containing the code for the initialization of the CamemBERT and Flaubert models;
-    - `model_nn.py`: containing the architecture of the neural network that can be trained on the embeddings of the sentences and the additional features extracted from the text;
+    - `model_nn.py`: containing the architecture of the neural network that can be   trained on the embeddings of the sentences and the additional features extracted from the text;
     - `model_meta_nn.py`: containing the architecture of the neural network that can be trained on the predictions of the CamemBERT, Flaubert, and Neural Network models to combine them;
 - The `utils` folder includes utilities for data preprocessing.
 - The `scripts` folder houses scripts to evaluate, train, and make predictions with the models.
@@ -143,13 +143,12 @@ To augment the data, we extracted the following attributes from the text:
 - POS tags
 The functions used to augment the data can be found in the `utils/data_augmentation.py` file, and an interactive generation of the augmented data can be done in the jupyter notebook at `notebooks/data_augmentation`
 
-Regarding POS tags, we decided to only employ the firs 5 POS tags and record the frequency (todo: check and add plot that shows which one performs better)
 
 ## 4.2 Embeddings
 Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
 
 while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
-### Determining the Best Hyperparameters for the Neural Network
+## 4.3 Determining the Best Hyperparameters for the Neural Network
 We performed a grid search with a k-fold cross-validation to determine the best hyperparameters for the neural network. To run the code for the evaluation, use:
 ```bash
 python scripts/evaluate_nn.py
@@ -162,6 +161,13 @@ The hyperparameters tested are:
 - epochs = [32, 64]
 
 First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
+
+### 4.3.1 POS tags impact on the accuracy
+Regarding the POS tags, we evaluated the impact on the accuracy of:
+- not using any POS tags;
+- using the 5 most frequent POS tags;
+- using the 10 most frequent POS tags.
+
 
 ### Evaluation Results
 
