@@ -1,0 +1,16 @@
+We explored various machine learning models to identify the most effective solution. We started with a preliminary evaluation of basic models such as Logistic Regression, KNN, Decision Tree, and Random Forest. These evaluations set the stage for more advanced methods (while this is explained, the confusion matrices appears from the first model – logistic regression – to the last one).
+
+For better results, we shifted our focus to the transformer models CamemBERT and Flaubert (show symbols), which we fine-tuned on our labelled training set. 
+
+We built our repository with reusability in mind, so all the code is modular and can be conveniently used by calling some functions in the terminal. (Compaiono I modulini python come rettangolini)
+In our scripts we employed grid search to understand the best hyperparameters for the transformers models and we employed techniques such as gradient accumulation to optimize performance despite computational constraints (show Bea’s video of charging bars). 
+
+After optimizing and training our transformer models (confusion matrices) we noticed that the accuracy was still not satisfying, especially regarding the C2 class of difficulty. 
+
+
+So, In addition to the transformer models, we created a neural network trained on sentence embeddings with CamemBERT (show image from neural network website) and on augmented data extracted from the sentences (confusion matrix)
+
+Our journey culminated in the creation of an ensemble model. This model integrates the strengths of CamemBERT, Flaubert, and our neural network (show graphs that are in the repo), ultimately selected due to its superior performance.
+We tested two types of combinations LightGBM and another Neural Network the neural network proved to be better in our task. (Show two confusion matrices)
+
+In summary, our project the importance of model selection (show a classification report), data augmentation, and ensemble learning (show sentences).
