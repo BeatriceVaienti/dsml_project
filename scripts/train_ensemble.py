@@ -27,7 +27,7 @@ import argparse
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 
@@ -149,11 +149,11 @@ def evaluate_nn(model, dataloader, device):
         for features, labels in dataloader:
             features, labels = features.to(device), labels.to(device)
             outputs = model(features)
-            _, preds = torch.max(outputs, 1)
-            predictions.extend(preds.cpu().numpy())
+            probs = torch.softmax(outputs, dim=1)  # Apply softmax to get probabilities
+            predictions.extend(probs.cpu().numpy())
             true_labels.extend(labels.cpu().numpy())
             torch.cuda.empty_cache()  # Clear cache after each batch
-    return predictions, true_labels
+    return np.array(predictions), np.array(true_labels)
 
     # Evaluate models
 def evaluate_model(model, dataloader, device, use_features=False):
@@ -203,35 +203,46 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
     device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
 
-    # Load the data
-    df = pd.read_csv('./training/training_data.csv')
-    df = drop_missing_remove_duplicates(df)
-
-    # Split the data
-    #train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
-
-    # Save the splits
-    #train_df.to_csv('ensemble_model/train_data.csv', index=False)
-    #test_df.to_csv('ensemble_model/test_data.csv', index=False)
-    
-    # Load the data
-    train_df = pd.read_csv('ensemble_model/train_data.csv')
-    test_df = pd.read_csv('ensemble_model/test_data.csv')
+    # Load the data if it exists or create it
+    train_data_path = './ensemble_model/train/train_data.csv'
+    test_data_path = './ensemble_model/test/test_data.csv'
+    if os.path.exists(train_data_path) and os.path.exists(test_data_path):
+        train_df = pd.read_csv(train_data_path)
+        test_df = pd.read_csv(test_data_path)
+    else:
+        df = pd.read_csv(train_data_path)
+        df = drop_missing_remove_duplicates(df)
+        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        train_df.to_csv(train_data_path, index=False)
+        test_df.to_csv(test_data_path, index=False)
 
     # Augment the training data
     train_df_augmented = augment_df(train_df)
-    top_tags = get_top_pos_tags(train_df_augmented)
-    #save top_tags
-    pos_tags_path = './ensemble_model/top_pos_tags.json'
-    with open(pos_tags_path, 'w') as f:
-        json.dump(top_tags, f)
+
+    # Check if POS tags were already saved and load them in case
+    pos_tags_path = './ensemble_model/simple_nn/top_pos_tags.json'
+    if os.path.exists(pos_tags_path):
+        with open(pos_tags_path, 'r') as f:
+            top_tags = json.load(f)
+    else:
+        top_tags = get_top_pos_tags(train_df_augmented)
+        with open(pos_tags_path, 'w') as f:
+            json.dump(top_tags, f)
+        
+    # Augment the test data using the same POS tags
     test_df_augmented = augment_df(test_df, top_tags)
 
     # Scaling
-    scaler = StandardScaler()
+    # Check if the scaler already exists
     feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
-    scaler.fit(train_df_augmented[feature_columns].values)
-    joblib.dump(scaler, 'ensemble_model/scaler.pkl')
+    scaler_path = './ensemble_model/simple_nn/scaler.pkl'
+    if os.path.exists(scaler_path):
+        scaler = joblib.load(scaler_path)
+    else:
+        scaler = StandardScaler()
+        scaler.fit(train_df_augmented[feature_columns].values)
+        joblib.dump(scaler, scaler_path)
+        
 
     train_df_augmented[feature_columns] = scaler.transform(train_df_augmented[feature_columns].values)
     test_df_augmented[feature_columns] = scaler.transform(test_df_augmented[feature_columns].values)
@@ -262,15 +273,16 @@ if __name__ == "__main__":
     camembert_dataloader = prepare_data(train_df_augmented, camembert_tokenizer, scaler, max_len=264, batch_size=best_hyperparameters_camembert['batch_size'], use_features=args.use_nn, device=device)
     flaubert_dataloader = prepare_data(train_df_augmented, flaubert_tokenizer, scaler, max_len=264, batch_size=best_hyperparameters_flaubert['batch_size'], use_features=args.use_nn, device=device)
 
-    camembert_model_path = 'ensemble_model/camembert_full'
-    flaubert_model_path = 'ensemble_model/flaubert_full'
-    nn_model_path = 'ensemble_model/simple_nn.pth'
-# Check if models already exist
+    camembert_model_path = './ensemble_model/camembert'
+    flaubert_model_path = './ensemble_model/flaubert'
+    nn_model_path = './ensemble_model/simple_nn/simple_nn.pth'
+
+
     if os.path.exists(flaubert_model_path+'/config.json'):
         flaubert_model = FlaubertForSequenceClassification.from_pretrained(flaubert_model_path).to(device)
     else:
         print('Training Flaubert...')
-        grad_scaler = torch.cuda.amp.GradScaler()
+        grad_scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
         flaubert_model = initialize_model(num_labels=6, device=device, model_choice='flaubert')
         flaubert_optimizer = get_optimizer(flaubert_model, learning_rate=best_hyperparameters_flaubert['learning_rate'])
 
@@ -283,7 +295,7 @@ if __name__ == "__main__":
     else:
         # Initialize and train models
         print('Training Camembert...')
-        grad_scaler = torch.cuda.amp.GradScaler()
+        grad_scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
         camembert_model = initialize_model(num_labels=6, device=device, model_choice='camembert')
         camembert_optimizer = get_optimizer(camembert_model, learning_rate=best_hyperparameters_camembert['learning_rate'])
         train_model(camembert_model, camembert_dataloader, camembert_optimizer, device, grad_scaler, num_epochs=best_hyperparameters_camembert['epochs'], use_features=args.use_nn, gradient_accumulation_steps=gradient_accumulation_steps_camembert)
@@ -292,11 +304,11 @@ if __name__ == "__main__":
     
     if not os.path.exists(flaubert_model_path+'/tokenizer_config.json'):
         print('Saving tokenizer flaubert...')
-        flaubert_tokenizer.save_pretrained(f'./ensemble_model/full/flaubert_full')
+        flaubert_tokenizer.save_pretrained(f'./ensemble_model/flaubert')
 
     if not os.path.exists(camembert_model_path+'/tokenizer_config.json'):
         print('Saving tokenizer camembert...')
-        camembert_tokenizer.save_pretrained(f'./ensemble_model/full/camembert_full')
+        camembert_tokenizer.save_pretrained(f'./ensemble_model/camembert')
     
     # Train SimpleNN
             
@@ -306,10 +318,14 @@ if __name__ == "__main__":
             "batch_size": 32,
             "epochs": 64
         }
+    
     if args.use_nn:
         if os.path.exists(nn_model_path):
             nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size=nn_hyperparameters['hidden_size'], num_classes=6).to(device)
-            nn_model.load_state_dict(torch.load(nn_model_path))
+            if torch.cuda.is_available():
+                nn_model.load_state_dict(torch.load(nn_model_path))
+            else:
+                nn_model.load_state_dict(torch.load(nn_model_path, map_location=torch.device('cpu')))
         else:
             print('Training new nn...')
 
@@ -331,7 +347,10 @@ if __name__ == "__main__":
     
     if args.use_nn:
         nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size = nn_hyperparameters['hidden_size'], num_classes=6).to(device)
-        nn_model.load_state_dict(torch.load(nn_model_path))
+        if torch.cuda.is_available():
+            nn_model.load_state_dict(torch.load(nn_model_path))
+        else:
+            nn_model.load_state_dict(torch.load(nn_model_path, map_location=torch.device('cpu')))
 
     print('Evaluating Camembert model...')
     camembert_predictions, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
@@ -343,7 +362,7 @@ if __name__ == "__main__":
         'f1': camembert_metrics[3],
         'conf_matrix': camembert_metrics[4]
     }
-    save_metrics(camembert_metrics_dict, 'models/camembert_metrics.txt')
+    save_metrics(camembert_metrics_dict, './ensemble_model/camembert/camembert_metrics.txt')
     
     print('Evaluating Flaubert model...')
     flaubert_predictions, true_labels = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
@@ -355,7 +374,7 @@ if __name__ == "__main__":
         'f1': flaubert_metrics[3],
         'conf_matrix': flaubert_metrics[4]
     }
-    save_metrics(flaubert_metrics_dict, 'models/flaubert_metrics.txt')
+    save_metrics(flaubert_metrics_dict, './ensemble_model/flaubert/flaubert_metrics.txt')
 
     camembert_accuracy = accuracy_score(true_labels, np.argmax(camembert_predictions, axis=1))
     flaubert_accuracy = accuracy_score(true_labels, np.argmax(flaubert_predictions, axis=1))
@@ -375,7 +394,7 @@ if __name__ == "__main__":
             'f1': nn_metrics[3],
             'conf_matrix': nn_metrics[4]
         }
-        save_metrics(nn_metrics_dict, 'models/nn_metrics.txt')
+        save_metrics(nn_metrics_dict, './ensemble_model/simple_nn/nn_metrics.txt')
         nn_accuracy = accuracy_score(true_labels, np.argmax(nn_predictions, axis=1))
         print(f"SimpleNN Model Accuracy: {nn_accuracy}")
         train_features = np.hstack([
@@ -415,9 +434,9 @@ if __name__ == "__main__":
     meta_nn_dataloader = create_nn_dataloader(train_features_tensor, true_labels_tensor, batch_size=32)
 
     meta_nn_param_grid = {
-        'learning_rate': [0.001, 0.01, 0.1],
+        'learning_rate': [0.0001, 0.001, 0.01, 0.1],
         'hidden_size': [32, 64, 128],
-        'epochs': [20, 50, 100]
+        'epochs': [20, 50, 100, 150, 200]
     }
 
     best_meta_nn_accuracy = 0
@@ -448,9 +467,9 @@ if __name__ == "__main__":
         print(f"Selecting MetaNN as the final model with accuracy: {best_meta_nn_accuracy}")
         final_model = best_meta_nn_model
         model_suffix = '_with_features' if args.use_nn else ''
-        torch.save(final_model.state_dict(), f'ensemble_model/meta_nn{model_suffix}.pth')
+        torch.save(final_model.state_dict(), f'./ensemble_model/meta_nn/meta_nn{model_suffix}.pth')
     else:
         print(f"Selecting LightGBM as the final model with accuracy: {grid_search.best_score_}")
         final_model = best_lgb_model
         model_suffix = '_with_features' if args.use_nn else ''
-        best_lgb_model.booster_.save_model(f'ensemble_model/meta_classifier{model_suffix}.txt')
+        best_lgb_model.booster_.save_model(f'./ensemble_model/meta_gb/meta_classifier{model_suffix}.txt')

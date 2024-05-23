@@ -255,10 +255,27 @@ If specified using the flag `--use_nn`, the additional neural network (the one p
 
 Given the computational intensity of re-training the single models each time from scratch, the training script uses a consistent train-test split of the full labelled dataset to train the single models. The predictions of the single models are then used to train the ensemble model. If the single models are already present in the `ensemble_model/` folder, the `train_ensemble.py` function loads them and uses them to create predictions on the test set. The trained ensemble model will be saved in the `ensemble_model/` folder.
 
-## Combination Techniques: Neural Network and lightGBM
+## 5.3 Combination Techniques: Neural Network and lightGBM
 To combine the CamemBERT, Flaubert, and Neural Network models, we tested two different approaches:
-1. LightGBM: We used the predictions of the CamemBERT model, Flaubert model, and Neural Network as features for a LightGBM model.
-2. Neural Network: We used the predictions of the CamemBERT model, Flaubert model, and LightGBM model as features for a Neural Network model.
+1. LightGBM: We used the predictions of the CamemBERT model, Flaubert model, and Neural Network as features for a LightGBM model. LightGBM is a gradient boosting framework that uses tree-based learning algorithms. We performed hyperparameter tuning to find the best parameters for the LightGBM model.
+2. Neural Network: We used the predictions of the CamemBERT model, Flaubert model, and LightGBM model as features for a Neural Network model. We performed hyperparameter tuning to find the best parameters for the Neural Network model.
+
+### 5.3.1 LightGBM
+After loading the predictions of the CamemBERT, Flaubert, and Neural Network models, we performed a grid search to find the best hyperparameters for the LightGBM model. The tested hyperparameters are:
+- learning_rate: [0.01, 0.1, 0.2]
+- num_leaves: [31, 50, 100]
+- max_depth: [-1, 10, 20]
+- n_estimators: [50, 100, 200]
+
+
+### 5.3.2 Neural Network
+
+After evaluating both meta models with a grid search, we found that the Neural Network model outperformed the LightGBM model. The best hyperparameters for the Neural Network model are:
+- learning_rate: 0.01
+- hidden_size: 128
+- epochs: 50
+
+
 
 
 Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
