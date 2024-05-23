@@ -275,11 +275,10 @@ After evaluating both meta models with a grid search, we found that the Neural N
 - hidden_size: 128
 - epochs: 50
 
+Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 64, 'epochs': 150}
+Selecting MetaNN as the final model with accuracy: 0.6416666666666667
 
 
-
-Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
-Selecting MetaNN as the final model with accuracy: 0.6322916666666667
 
 ## `train_ensemble.py`: Ensemble Model Training
 To train the ensemble model, run:
