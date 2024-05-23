@@ -299,7 +299,7 @@ These are the steps followed in both cases:
 - Load the predictions of the single models on the test set.
 - Perform hyperparameter tuning using grid search to find the best parameters for the meta model (using the hyperparameters described in Section 5.3).
 - Train the meta model on the predictions of the single models with the best hyperparameters found.
-- Save the trained meta model in the `ensemble_model` folder, respectively in the subfolders `meta_nn` and `meta_gb`.
+- Evaluate and save the trained meta model in the `ensemble_model` folder, respectively in the subfolders `meta_nn` and `meta_gb`.
 
 
 

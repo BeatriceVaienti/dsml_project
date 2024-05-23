@@ -511,7 +511,7 @@ if __name__ == "__main__":
     print('Evaluating final model on evaluation set...')
     if isinstance(final_model, MetaNN):
         # Prepare the evaluation set for MetaNN
-        camembert_predictions_eval, _ = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
+        camembert_predictions_eval, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
         flaubert_predictions_eval, _ = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
         
         if args.use_nn:
@@ -533,11 +533,11 @@ if __name__ == "__main__":
         
         meta_classifier_predictions, true_labels = evaluate_meta_nn(final_model, eval_nn_dataloader, device)
     else:
-        camembert_predictions_eval, _ = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
+        camembert_predictions_eval, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
         flaubert_predictions_eval, _ = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
         
         if args.use_nn:
-            nn_predictions_eval, _ = evaluate_nn(nn_model, nn_subtest_dataloader, device)
+            nn_predictions_eval, _ = evaluate_nn(nn_model, nn_eval_dataloader, device)
             eval_features = np.hstack([
                 np.argmax(camembert_predictions_eval, axis=1).reshape(-1, 1),
                 np.argmax(flaubert_predictions_eval, axis=1).reshape(-1, 1),

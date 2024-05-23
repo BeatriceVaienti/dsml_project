@@ -58,4 +58,4 @@ def evaluate_meta_nn(model, dataloader, device):
             _, preds = torch.max(outputs, 1)
             predictions.extend(preds.cpu().numpy())
             true_labels.extend(batch_labels.cpu().numpy())
-    return predictions, true_labels
+    return np.array(predictions), np.array(true_labels)
