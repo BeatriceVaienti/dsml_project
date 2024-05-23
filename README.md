@@ -139,6 +139,7 @@ python scripts/predict_bert.py --model [camembert|camembert-large|flaubert]
 The model contained in the `models_saved` folder will be used to predict on the inference set, with results saved in the `predictions` folder.
 
 # 4. Neural Network
+The third model that can be optionally added into our ensemble model is a neural network, trained on the embeddings of the sentences and additional features extracted from the text. The neural network is configured with the best hyperparameters found in Section 4.3.1,  with the best POS tags number found in Section 4.3.2. and the best model for the generation of the embeddings found in Section 4.3.3.
 ## 4.1 Data Augmentation
 
 To augment the data, we extracted the following attributes from the text:
@@ -167,8 +168,6 @@ The hyperparameters tested are:
 - batch_sizes = [16, 32, 64, 128]
 - epochs = [32, 64]
 
-First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
-
 
 
 ### 4.3.1 POS tags impact on the accuracy
@@ -196,7 +195,8 @@ In the following plot we show the impact of the embeddings on the accuracy of th
 
 ![Best Embedding type](images/embeddings_evaluation.png)
 
-The plot shows that the best mean accuracy is obtained when using the __CamemBERT embeddings__. As a consequence, we decided to use the CamemBERT embeddings for the subsequent experiments.
+The plot shows that the best mean accuracy is obtained when using the __CamemBERT embeddings__. 
+ The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
 
 ### Evaluation Results
 
