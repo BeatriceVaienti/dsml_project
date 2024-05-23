@@ -39,12 +39,12 @@ Answer the following questions
 - Do some more analysis to better understand how your model behaves.
 
 
+In the next sections we will describe the models that we trained (Flaubert, CamemBERT, Neural Network) and the ensemble model that we built combining them.
 
+# 2. Flaubert / CamemBERT Model Training and Evaluation
+As a first step, we trained and evaluated two transformer models, CamemBERT and Flaubert, on the dataset. We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line.
 
-# 3. Flaubert / CamemBERT Model Training and Evaluation
-We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line. 
-
-## 3.1 Scripts
+## 2.1 Scripts
 - `evaluate_bert.py`: Manages training and validation loops, performing hyperparameter tuning with a train-validation split.
 - `train_bert.py`: Trains a selected model on the full dataset.
 - `predict_bert.py`: Makes predictions on new, unlabeled data using a trained model.
@@ -186,7 +186,6 @@ The plot shows that the best mean accuracy is obtained when using the 5 most fre
 # 5. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
-
 If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 4.
 
 ## 5.1 `ensemble_model`:Folder Structure
@@ -230,8 +229,8 @@ Based on the chosen meta model type, the script will load the corresponding trai
 
 # Best Model Combination and Accuracies Obtained for the Kaggle competition
 
-| Model      | Accuracy | 
-|------------|----------|
+| Model      | Accuracy    | 
+|------------|-------------|
 | CamemBERT  | Placeholder | 
 | Flaubert   | Placeholder |
 
@@ -239,7 +238,7 @@ Based on the chosen meta model type, the script will load the corresponding trai
 comment on the fact that one limitation consists in the fact that we are not actually doing the k-fold for the transformers models, so the result is biased towards the specific split done on the data (especially considering that the dataset is limited) -> a potential future work would be a k-fold hyperparameter tuning
 
 
-# Conclusion
+
 
 
 
@@ -247,8 +246,7 @@ comment on the fact that one limitation consists in the fact that we are not act
 
 
 # Streamlit App
-We created a Streamlit app to visualize the predictions of the models. The app allows users to input a text and see the predictions of the CamemBERT and Flaubert models. The app can be run locally by executing the following command:
-```bash
-streamlit run app.py
-```
-The app will open in a new browser window, and users can interact with it by entering text and seeing the model predictions. 
+We created a Streamlit app to visualize the predictions of the models. The app is thought to match people with the right level of French language proficiency. The user can input a sentence in French and the app will predict the CEFR level of the sentence. The app can be run with the following command:
+
+
+# Conclusion
