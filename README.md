@@ -4,7 +4,7 @@ Repository for the Data Science and Machine Learning course - Beatrice Vaienti a
 # 0. Introduction
 The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
 
-To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different transformer models, CamemBERT and Flaubert (Section 2) and a Neural Network (Section 3). Then, in order to boost the accuracy of our model, we decided to combine these three models creating an ensemble model (Section 4). 
+To achieve this goal we explored multiple machine learning solutions to identify the most effective approach. After performing a __preliminary evaluation__ (see Section 1), we tested two different __transformer models__, CamemBERT and Flaubert (Section 2) and a __Neural Network__ (Section 3). Then, in order to boost the accuracy of our model, we decided to combine these three models creating an __ensemble model__ (Section 4). 
 
 ## 0.1 Folder Structure
 This repository is thought with reusability in mind. As such, the code is organized in a modular way, with separate scripts for training, evaluation, and prediction and separate modules for models and utilities. 
@@ -22,11 +22,7 @@ Trained models are saved in the `models_saved` folder.
 
 
 # 1. Preliminary evaluation
-<<<<<<< HEAD
-As part of our prelimnary evaluation, the following table reports the metrics of standard models tested on the provided training set without doing any cleaning on the data. The best standard solution is provided by the logistic regression model. Our models, explained in the following sections, enhance the accuracy beyond 60%. 
-=======
-In the preliminary evaluation we tested four different models: Logistic Regression, KNeighborsClassifier, DecisionTreeClassifier, and RandomForestClassifier. We also tested a tuned version of the KNeighborsClassifier. The results of the evaluation are shown in the following table:
->>>>>>> c9a59e1118bed40f78ea3f7479d02683b44d6c19
+As part of our preliminary evaluation, the following table reports the metrics of standard models tested on the provided training set without doing any cleaning on the data. The best standard solution is provided by the logistic regression model. Our models, as explained in the following sections, enhance the accuracy beyond 60%. 
 
 | Model      | LogisticRegression | KNeighborsClassifier  | DecisionTreeClassifier | RandomForestClassifier | Tuned KNeighborsClassifier |
 |------------|--------------------|-----------------------|------------------------|------------------------|---------------------------|
@@ -36,10 +32,8 @@ In the preliminary evaluation we tested four different models: Logistic Regressi
 | Accuracy   | 0.43               | 0.29                  | 0.31                   | 0.40                   |    0.37     |
   
 
-
-
-
-In the next sections we will describe the models that we trained (Flaubert, CamemBERT, Neural Network) and the ensemble model that we built combining them.
+s
+In the next sections we will describe the models that we trained (Flaubert, CamemBERT, Neural Network) and the ensemble models that we built to combine them. 
 
 # 2. Flaubert / CamemBERT Model Training and Evaluation
 As a first step, we trained and evaluated two transformer models, CamemBERT and Flaubert, on the dataset. We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line.
