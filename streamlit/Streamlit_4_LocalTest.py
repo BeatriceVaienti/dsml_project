@@ -4,11 +4,12 @@ import torch
 from transformers import AutoTokenizer, CamembertForSequenceClassification
 from sentence_transformers import SentenceTransformer, util
 import pycountry
+import os
 
 # Set your OpenAI API key
-openai.api_key = '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'
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# Load the tokenizer and the model
+#Load the tokenizer and the model
 tokenizer = AutoTokenizer.from_pretrained('C:\\Users\\berret_c\\Downloads\\best_model\\best_model\\camembert_full_515')
 model = CamembertForSequenceClassification.from_pretrained('C:\\Users\\berret_c\\Downloads\\best_model\\best_model\\camembert_full_515')
 
