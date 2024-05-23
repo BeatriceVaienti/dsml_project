@@ -237,7 +237,7 @@ if __name__ == "__main__":
     test_df_augmented = augment_df(test_df, top_tags)
 
     # Split test data into subtest and evaluation sets
-    subtest_df, evaluation_df = train_test_split(test_df_augmented, test_size=0.3, random_state=42)
+    subtest_df, evaluation_df = train_test_split(test_df_augmented, test_size=0.4, random_state=42)
 
     # Scaling
     # Check if the scaler already exists
@@ -348,6 +348,9 @@ if __name__ == "__main__":
     camembert_eval_dataloader = prepare_data(evaluation_df, camembert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
     flaubert_eval_dataloader = prepare_data(evaluation_df, flaubert_tokenizer, scaler, max_len=264, batch_size=32, use_features=args.use_nn, shuffle=False, device=device)
     
+    # Keep track of sentences for evaluation
+    evaluation_sentences = evaluation_df['sentence'].tolist()
+
     # Load pre-trained models
     camembert_model = CamembertForSequenceClassification.from_pretrained(camembert_model_path).to(device)
     flaubert_model = FlaubertForSequenceClassification.from_pretrained(flaubert_model_path).to(device)
@@ -568,11 +571,10 @@ if __name__ == "__main__":
     else:
         save_metrics(meta_classifier_metrics_dict, f'./ensemble_model/meta_gb/meta_classifier{model_suffix}_metrics.json')
 
-    #save to file the wrong predictions
     wrong_predictions = []
     for i in range(len(meta_classifier_predictions)):
         if np.argmax(meta_classifier_predictions[i]) != true_labels[i]:
-            wrong_predictions.append((int(i), int(np.argmax(meta_classifier_predictions[i])), int(true_labels[i])))
+            wrong_predictions.append((int(i), int(np.argmax(meta_classifier_predictions[i])), int(true_labels[i]), evaluation_sentences[i]))
 
     with open('./ensemble_model/meta_nn/wrong_predictions.json', 'w') as f:
         json.dump(wrong_predictions, f)

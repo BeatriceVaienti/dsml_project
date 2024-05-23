@@ -322,11 +322,11 @@ Based on the chosen meta model type, the script will load the corresponding trai
 
 # Best Model Combination and Accuracies Obtained for the Kaggle competition
 
-| Model      | Accuracy    | 
-|------------|-------------|
-| Flaubert   | Placeholder | 
-| CamemBERT  | Placeholder |
-| MetaNN     | Placeholder |
+| Model      | Score on Keggle    | 
+|------------|--------------------|
+| Flaubert   |        0.570       | 
+| CamemBERT  |        0.576       |
+| MetaNN     |        0. 591      |
 
 # Future Work
 comment on the fact that one limitation consists in the fact that we are not actually doing the k-fold for the transformers models, so the result is biased towards the specific split done on the data (especially considering that the dataset is limited) -> a potential future work would be a k-fold hyperparameter tuning
