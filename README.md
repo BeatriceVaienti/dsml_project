@@ -241,21 +241,13 @@ Based on the chosen meta model type, the script will load the corresponding trai
 comment on the fact that one limitation consists in the fact that we are not actually doing the k-fold for the transformers models, so the result is biased towards the specific split done on the data (especially considering that the dataset is limited) -> a potential future work would be a k-fold hyperparameter tuning
 
 
+# Streamlit App: A Tandem Matching App
+The current state of the art in tandem language exchange apps leverages advanced technology and social networking to facilitate language learning through mutual practice and cultural exchange. Leading platforms like Tandem, HelloTalk, Speaky, and ConversationExchange offer diverse features such as text, audio, and video chat, translation tools, and community forums. These apps use AI and machine learning to enhance user experience through personalized content and real-time corrections. Gamification elements like streaks, badges, and leaderboards are incorporated to maintain user engagement, while intuitive interfaces and seamless communication features make these apps user-friendly and effective.
 
+Despite their strengths, there is room for improvement in tandem language exchange apps. Future advancements could include more immersive experiences using virtual reality (VR) and augmented reality (AR), allowing users to simulate real-life interactions in virtual environments. Further integration with formal education could provide structured learning paths and accreditation, enhancing the educational value of these platforms. Additionally, ongoing improvements in AI could lead to even more personalized learning experiences tailored to individual user needs and progress. By addressing these areas, tandem language exchange apps can continue to evolve and offer even more innovative and effective language learning solutions.
 
+For our project, we decided to focus on the language matching aspect of tandem language exchange apps. In particular, we employed our models to predict the CEFR level of French sentences to facilitate the matching of language learners with partners of similar proficiency.
 
-
-
-
-
-# Streamlit App
-We created a Streamlit app to visualize the predictions of the models. The app is thought to match people with the right level of French language proficiency. The user can input a sentence in French and the app will predict the CEFR level of the sentence. 
-
-Normally in a tandem app you would choose yourself the level of the language proficiency you are looking for, but in this case we decided to predict it automatically, so that the matching is more accurate.
-
-We tested our idea with the PSI tandem group, to explore how this kind of app could be useful for university students and researchers.
-
-
-
+The Proof of Concept of our application was tested with the PSI tandem group, to explore how this kind of app could be useful for university students and researchers. 
 
 # Conclusion
