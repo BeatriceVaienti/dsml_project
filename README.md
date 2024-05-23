@@ -97,7 +97,7 @@ The results of this experiment are shown in the following plot:
 
 Consistently with the results obtained for the base model, the learning rate 5e-05 outperforms the lower learning rate of 1e-05. However, the best accuracy still appears largely lower than the one obtained with the base model. This is probably due to the fact that the large model is more complex and requires more data to be trained properly.
 
-As a result, we decided to discard the large model and focus on the base model for the subsequent experiments.
+As a result, we decided to discard the large CamemBERT model and focus on the base CamemBERT model for the subsequent experiments.
 
 ##### Flaubert
 The model used for Flaubert is the `flaubert/flaubert_base_cased` model.
@@ -152,7 +152,8 @@ The functions used to augment the data can be found in the `utils/data_augmentat
 Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
 
 while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
-In Section 
+In Section 4.3.2 we will describe the process that we followed to choose the best model for the generation of the embeddings and the impact that the addition of the embedding has on the accuracy of the model.
+
 ## 4.3 Determining the Best Hyperparameters for the Neural Network
 We performed a grid search with a k-fold cross-validation to determine the best hyperparameters for the neural network. To run the code for the evaluation, use:
 
@@ -168,7 +169,7 @@ The hyperparameters tested are:
 
 First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
 
-###
+
 
 ### 4.3.1 POS tags impact on the accuracy
 Regarding the POS tags, we evaluated the impact on the accuracy of:
@@ -182,10 +183,24 @@ In the following plot we show the impact of the POS tags on the accuracy of the 
 ![Best Pos number](images/pos_evaluation.png)
 
 The plot shows that the best mean accuracy is obtained when using the __5 most frequent POS tags__: the reason probably lies in the fact that the infrequent POS tags are not very informative and can introduce noise in the model. As a consequence, we decided to use the 5 most frequent POS tags for the subsequent experiments.
+
+### 4.3.2 Best Model for Embeddings Generation
+In order to choose which model to use for the generation of the embeddings we repeated the grid search with kfold cross-validation for the following settings:
+- __No embeddings__ + 5 most frequent POS tags.
+- __CamemBERT embeddings__ + 5 most frequent POS tags;
+- __Flaubert embeddings__ + 5 most frequent POS tags;
+- Both __CamemBERT and Flaubert__ embeddings + 5 most frequent POS tags;
+
+
+In the following plot we show the impact of the embeddings on the accuracy of the model.
+
+![Best Embedding type](images/embeddings_evaluation.png)
+
 ### Evaluation Results
 
 ![NN Confusion Matrix](images/nn_matrix.png)
 
+While the overall accuracy of the model is lower than the one obtained with the CamemBERT and Flaubert models, the neural network
 # 5. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
@@ -242,12 +257,26 @@ comment on the fact that one limitation consists in the fact that we are not act
 
 
 # Streamlit App: A Tandem Matching App
+
+## Introduction
 The current state of the art in tandem language exchange apps leverages advanced technology and social networking to facilitate language learning through mutual practice and cultural exchange. Leading platforms like Tandem, HelloTalk, Speaky, and ConversationExchange offer diverse features such as text, audio, and video chat, translation tools, and community forums. These apps use AI and machine learning to enhance user experience through personalized content and real-time corrections. Gamification elements like streaks, badges, and leaderboards are incorporated to maintain user engagement, while intuitive interfaces and seamless communication features make these apps user-friendly and effective.
 
 Despite their strengths, there is room for improvement in tandem language exchange apps. Future advancements could include more immersive experiences using virtual reality (VR) and augmented reality (AR), allowing users to simulate real-life interactions in virtual environments. Further integration with formal education could provide structured learning paths and accreditation, enhancing the educational value of these platforms. Additionally, ongoing improvements in AI could lead to even more personalized learning experiences tailored to individual user needs and progress. By addressing these areas, tandem language exchange apps can continue to evolve and offer even more innovative and effective language learning solutions.
 
+## Our project
 For our project, we decided to focus on the language matching aspect of tandem language exchange apps. In particular, we employed our models to predict the CEFR level of French sentences to facilitate the matching of language learners with partners of similar proficiency.
+
+![App 1](images/AppTest_1.PNG)
 
 The Proof of Concept of our application was tested with the PSI tandem group, to explore how this kind of app could be useful for university students and researchers. 
 
+## Novelty
+- check the coherence of the answer and the question. If we write in a different language or the answer is not coherent (showing that the user didn't understand the question), the app will suggest to the user to ask the question again or to write in the same language. 
+- The test is progressive: the questions are asked in a progressively more difficult level. Moreover, if the user answers with a level that is already higher than the question the test jumps to the next level.
+
+
+## Conclusion
+This method not only makes the testing process more dynamic but also more accurately assesses the user's true language proficiency by adapting to their capabilities.
+This approach ensures that unless the user demonstrates knowledge above A1, they are not advanced to a higher level, and if they fail to reach even A1, they are still reported at A1 since there isn't a lower level defined in your settings.
+Partnering with existing educational platforms or content creators could allow you to incorporate their materials into your app legally and ethically.
 # Conclusion
