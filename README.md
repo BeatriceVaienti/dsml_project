@@ -281,6 +281,7 @@ After evaluating both meta models with a grid search, we found that the Neural N
 
 We therefore trained the MetaNN model with these hyperparameters. First we trained it on a subset of the test data to evaluate its performance, then we trained it on the full test data to make predictions on the test set. The following confusion matrix shows the results of the MetaNN model trained on a subset of the test data.
 
+![Meta NN Confusion Matrix](images/meta_matrix.png)
 
 ## 5.4 Limitations
 The limited amount of data available for the training constitutes an important limitation, especially when training a meta model. This strategy would have benefitted from the creation of an additional labelled synthetic dataset.
@@ -321,11 +322,11 @@ Based on the chosen meta model type, the script will load the corresponding trai
 
 # Best Model Combination and Accuracies Obtained for the Kaggle competition
 
-| Model      | Accuracy    | 
-|------------|-------------|
-| Flaubert   | Placeholder | 
-| CamemBERT  | Placeholder |
-| MetaNN     | Placeholder |
+| Model      | Score on Keggle    | 
+|------------|--------------------|
+| Flaubert   |        0.570       | 
+| CamemBERT  |        0.576       |
+| MetaNN     |        0. 591      |
 
 # Future Work
 comment on the fact that one limitation consists in the fact that we are not actually doing the k-fold for the transformers models, so the result is biased towards the specific split done on the data (especially considering that the dataset is limited) -> a potential future work would be a k-fold hyperparameter tuning

@@ -3,7 +3,7 @@
     "path": "./ensemble_model/meta_nn/meta_nn_with_features.pth",
     "best_meta_nn_params": {
         "learning_rate": 0.01,
-        "hidden_size": 128,
-        "epochs": 150
+        "hidden_size": 64,
+        "epochs": 200
     }
 }
