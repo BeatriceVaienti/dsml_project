@@ -19,16 +19,15 @@ import argparse
 def evaluate_nn(model, dataloader, device):
     model.eval()
     model.to(device)
-    predictions, true_labels = [], []
+    predictions = []
     with torch.no_grad():
-        for features, labels in dataloader:
-            features, labels = features.to(device), labels.to(device)
+        for batch in dataloader:
+            features = batch[0].to(device)
             outputs = model(features)
             probs = torch.softmax(outputs, dim=1)  # Apply softmax to get probabilities
             predictions.extend(probs.cpu().numpy())
-            true_labels.extend(labels.cpu().numpy())
             torch.cuda.empty_cache()  # Clear cache after each batch
-    return np.array(predictions), np.array(true_labels)
+    return np.array(predictions)
 
 
 class SimpleNN(nn.Module):

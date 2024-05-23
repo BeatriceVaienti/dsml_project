@@ -281,6 +281,7 @@ After evaluating both meta models with a grid search, we found that the Neural N
 
 We therefore trained the MetaNN model with these hyperparameters. First we trained it on a subset of the test data to evaluate its performance, then we trained it on the full test data to make predictions on the test set. The following confusion matrix shows the results of the MetaNN model trained on a subset of the test data.
 
+![Meta NN Confusion Matrix](images/meta_matrix.png)
 
 ## 5.4 Limitations
 The limited amount of data available for the training constitutes an important limitation, especially when training a meta model. This strategy would have benefitted from the creation of an additional labelled synthetic dataset.
