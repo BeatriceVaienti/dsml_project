@@ -1,6 +1,9 @@
 # Data Science and Machine Learning Course - Chiara Berretta and Beatrice Vaienti
 Repository for the Data Science and Machine Learning course - Beatrice Vaienti and Chiara Berretta
 
+Video presentation: https://www.youtube.com/watch?v=pqXWuDWVZto 
+
+
 # 0. Introduction
 The goal of this project is to build a model that can predict the CEFR language difficulty of french sentences. The training set consists of # sentences labeled with the CEFR level, ranging from A1 to C2. 
 
@@ -355,6 +358,10 @@ The only personal information required is the user's country of selection, ensur
 
 ## Partnership
 We have collaborated with the Paul Scherrer Institute's tandem group to pilot our proof of concept and explore how this app could foster cultural exchanges among university students and researchers who face challenges in finding suitable language partners. In our YouTube video presentation, we demonstrate the quality and effectiveness of our implementation.
+
+Here is the link to our video presentation: https://www.youtube.com/watch?v=pqXWuDWVZto 
+
+And the link to our Streamlit app: https://chiara095-5usgsmpl84ggggzcefpejd.streamlit.app/
 
 ## Future work
 By partnering with established educational platforms or content creators, we aim to legally and ethically integrate their materials into our app. This collaboration would enable us to tailor learning content based on a "reading journal" of recorded conversations with partners, enhancing the educational experience. 
