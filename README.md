@@ -324,9 +324,9 @@ Based on the chosen meta model type, the script will load the corresponding trai
 | MetaNN     |        0. 591      |
 
 # Future Work
-comment on the fact that one limitation consists in the fact that we are not actually doing the k-fold for the transformers models, so the result is biased towards the specific split done on the data (especially considering that the dataset is limited) -> a potential future work would be a k-fold hyperparameter tuning
+The computational constraints limited the number of hyperparameters that we could test for the models. Moreover it also made not possible to perform a k-fold cross-validation for the transformers models. A potential future work would be to perform a k-fold hyperparameter tuning for the transformers models.
 
-adding synthetic data
+Another potential future work would be to add synthetic data to the training set. This would allow the models to learn more effectively and improve the accuracy of the predictions. 
 
 
 # Streamlit App: A Tandem Matching App
