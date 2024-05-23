@@ -22,26 +22,21 @@ Trained models are saved in the `models_saved` folder.
 
 
 # 1. Preliminary evaluation
+<<<<<<< HEAD
 As part of our prelimnary evaluation, the following table reports the metrics of standard models tested on the provided training set without doing any cleaning on the data. The best standard solution is provided by the logistic regression model. Our models, explained in the following sections, enhance the accuracy beyond 60%. 
+=======
+In the preliminary evaluation we tested four different models: Logistic Regression, KNeighborsClassifier, DecisionTreeClassifier, and RandomForestClassifier. We also tested a tuned version of the KNeighborsClassifier. The results of the evaluation are shown in the following table:
+>>>>>>> c9a59e1118bed40f78ea3f7479d02683b44d6c19
 
-table:
-           LogisticRegression  KNeighborsClassifier  DecisionTreeClassifier  \
-Precision                0.43                  0.37                    0.32   
-Recall                   0.43                  0.28                    0.31   
-F1-Score                 0.43                  0.26                    0.31   
-Accuracy                 0.43                  0.29                    0.31   
+| Model      | LogisticRegression | KNeighborsClassifier  | DecisionTreeClassifier | RandomForestClassifier | Tuned KNeighborsClassifier |
+|------------|--------------------|-----------------------|------------------------|------------------------|---------------------------|
+| Precision  | 0.43               | 0.37                  | 0.32                   |  0.39                  |     0.43         |
+| Recall     | 0.43               | 0.28                  | 0.31                   | 0.40                   |    0.37     |
+| F1-Score   | 0.43               | 0.26                  | 0.31                   | 0.39                   |    0.36     |
+| Accuracy   | 0.43               | 0.29                  | 0.31                   | 0.40                   |    0.37     |
+  
 
-           RandomForestClassifier  Tuned KNeighborsClassifier  
-Precision                    0.39                       0.43  
-Recall                       0.40                       0.37  
-F1-Score                     0.39                       0.36  
-Accuracy                     0.40                       0.37
 
-Answer the following questions
-- Which is the best model?
-- Show the confusion matrix.
-- Show examples of some erroneous predictions. Can you understand where the error is coming from?
-- Do some more analysis to better understand how your model behaves.
 
 
 In the next sections we will describe the models that we trained (Flaubert, CamemBERT, Neural Network) and the ensemble model that we built combining them.
