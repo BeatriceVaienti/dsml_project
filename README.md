@@ -22,7 +22,7 @@ Trained models are saved in the `models_saved` folder.
 
 
 # 1. Preliminary evaluation
-report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
+As part of our prelimnary evaluation, the following table reports the metrics of standard models tested on the provided training set without doing any cleaning on the data. The best standard solution is provided by the logistic regression model. Our models, explained in the following sections, enhance the accuracy beyond 60%. 
 
 table:
            LogisticRegression  KNeighborsClassifier  DecisionTreeClassifier  \
