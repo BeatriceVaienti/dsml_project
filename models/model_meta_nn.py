@@ -33,7 +33,7 @@ def train_meta_nn(model, dataloader, criterion, optimizer, device, epochs):
             loss.backward()
             optimizer.step()
 
-def evaluate_meta_nn(model, dataloader, device):
+def evaluate_meta_nn_old(model, dataloader, device):
     model.eval()
     all_predictions = []
     all_labels = []
@@ -45,3 +45,17 @@ def evaluate_meta_nn(model, dataloader, device):
             all_predictions.extend(predictions.cpu().numpy())
             all_labels.extend(batch_labels.cpu().numpy())
     return np.array(all_predictions), np.array(all_labels)
+
+def evaluate_meta_nn(model, dataloader, device):
+    model.eval()
+    predictions = []
+    true_labels = []
+    with torch.no_grad():
+        for batch in dataloader:
+            batch_features = batch[0].float().to(device)  # Ensure features are float
+            batch_labels = batch[1].to(device)
+            outputs = model(batch_features)
+            _, preds = torch.max(outputs, 1)
+            predictions.extend(preds.cpu().numpy())
+            true_labels.extend(batch_labels.cpu().numpy())
+    return predictions, true_labels
