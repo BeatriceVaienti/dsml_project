@@ -44,14 +44,14 @@ Answer the following questions
 # 3. Flaubert / CamemBERT Model Training and Evaluation
 We used the Hugging Face library to load pre-trained models and fine-tune them on our dataset. Our approach supports using either the CamemBERT or Flaubert model, selectable via command line. 
 
-## Scripts
+## 3.1 Scripts
 - `evaluate_bert.py`: Manages training and validation loops, performing hyperparameter tuning with a train-validation split.
 - `train_bert.py`: Trains a selected model on the full dataset.
 - `predict_bert.py`: Makes predictions on new, unlabeled data using a trained model.
 
 In order to increase the batch size even without the computational resources, we used the __gradient accumulation technique__. This technique allows us to simulate a larger batch size by accumulating gradients over multiple steps before updating the model weights. In particular we set the gradient accumulation to calculate the steps in order to simulate a batch size of 64. However, we still evaluated the impact of different actual batch sizes, since, notwithstanding the gradient accumulation technique, the accuracy is still influenced by the actual batch size.
 
-## `evaluate_bert.py`: Hyperparameter Tuning and Evaluation with Grid Search
+## 3.2 `evaluate_bert.py`: Hyperparameter Tuning and Evaluation with Grid Search
 Hyperparameter tuning is performed using `evaluate_bert.py` with a grid search over predefined values for learning rates, batch sizes, and epochs. Each configuration is evaluated on the validation set, and the best-performing parameters are recorded. Results are saved in the `hyperparameters_log` folder.
 Due to the computational cost of hyperparameter tuning, we opted to perform the evaluation with a simple train-validation split of 20%, without k-fold cross-validation. In particular, the full labelled dataset was split into train, test and evaluation. The test dataset was the one used to calculate the accuracy in the logs, the evaluation dataset was employed to obtain the scores and confusion matrix with the best hyperparameters.
 
@@ -113,8 +113,12 @@ In the following table, we summarize the best validation accuracy achieved for e
 | Flaubert   | 5e-05         | 40         | 16     | 0.596875            |
 
 #### Confusion Matrices
-The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below, along with their accuracy, precision, recall, and F1-score.
+The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below, along with their accuracy, precision, recall, and F1-score. The confusion matrices were obtained by training the models with the best hyperparameters on a train-test split of 80-20 and then predicting on the test set.
+
+#### Camembert Confusion Matrix
 ![CamemBERT Confusion Matrix](images/camembert_matrix.png)
+
+#### Flaubert Confusion Matrix
 ![Flaubert Confusion Matrix](images/flaubert_matrix.png)
 
 
@@ -150,6 +154,7 @@ Embeddings for the sentences are generated using the selected transformer model 
 while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
 ## 4.3 Determining the Best Hyperparameters for the Neural Network
 We performed a grid search with a k-fold cross-validation to determine the best hyperparameters for the neural network. To run the code for the evaluation, use:
+
 ```bash
 python scripts/evaluate_nn.py
 ```
