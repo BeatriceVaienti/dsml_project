@@ -196,11 +196,15 @@ In the following plot we show the impact of the embeddings on the accuracy of th
 
 ![Best Embedding type](images/embeddings_evaluation.png)
 
+The plot shows that the best mean accuracy is obtained when using the __CamemBERT embeddings__. As a consequence, we decided to use the CamemBERT embeddings for the subsequent experiments.
+
 ### Evaluation Results
 
 ![NN Confusion Matrix](images/nn_matrix.png)
 
-While the overall accuracy of the model is lower than the one obtained with the CamemBERT and Flaubert models, the neural network
+While the overall accuracy of the model is lower than the one obtained with the CamemBERT and Flaubert models, the neural network shows different strengths. In particular, the neural network is able to predict the C2 class with a higher accuracy than the other models. This is probably due to the fact that the neural network is able to capture the relationship between the attributes extracted from the text and the CEFR level of the sentences. As such it appears beneficial to combine the neural network with the CamemBERT and Flaubert models to obtain an overall better model. We will, in any case, present an evaluation of the different accuracy obtainable when incorporating or not the neural network in the ensemble model in the next section.
+
+
 # 5. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
