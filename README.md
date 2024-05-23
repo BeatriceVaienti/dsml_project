@@ -173,7 +173,12 @@ Regarding the POS tags, we evaluated the impact on the accuracy of:
 - using the 5 most frequent POS tags;
 - using the 10 most frequent POS tags.
 
+In the following plot we show the impact of the POS tags on the accuracy of the model. The best mean accuracy is calculated repeating the grid search with kfold cross-validaton for each of the three cases and selecting the case with the highest mean accuracy.
 
+
+![Best Pos number](images/pos_evaluation.png)
+
+The plot shows that the best mean accuracy is obtained when using the 5 most frequent POS tags: the reason probably lies in the fact that the infrequent POS tags are not very informative and can introduce noise in the model. As a consequence, we decided to use the 5 most frequent POS tags for the subsequent experiments.
 ### Evaluation Results
 
 ![NN Confusion Matrix](images/nn_matrix.png)
