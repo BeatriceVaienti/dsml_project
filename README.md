@@ -24,18 +24,13 @@ Trained models are saved in the `models_saved` folder.
 # 1. Preliminary evaluation
 report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
 
-table:
-           LogisticRegression  KNeighborsClassifier  DecisionTreeClassifier  \
-Precision                0.43                  0.37                    0.32   
-Recall                   0.43                  0.28                    0.31   
-F1-Score                 0.43                  0.26                    0.31   
-Accuracy                 0.43                  0.29                    0.31   
-
-           RandomForestClassifier  Tuned KNeighborsClassifier  
-Precision                    0.39                       0.43  
-Recall                       0.40                       0.37  
-F1-Score                     0.39                       0.36  
-Accuracy                     0.40                       0.37
+| Model      | LogisticRegression | KNeighborsClassifier  | DecisionTreeClassifier | RandomForestClassifier | Tuned KNeighborsClassifier |
+|------------|--------------------|-----------------------|------------------------|------------------------|---------------------------|
+| Precision  | 0.43               | 0.37                  | 0.32                   |  0.39                  |     0.43         |
+| Recall     | 0.43               | 0.28                  | 0.31                   | 0.40                   |    0.37     |
+| F1-Score   | 0.43               | 0.26                  | 0.31                   | 0.39                   |    0.36     |
+| Accuracy   | 0.43               | 0.29                  | 0.31                   | 0.40                   |    0.37     |
+  
 
 Answer the following questions
 - Which is the best model?
