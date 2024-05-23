@@ -22,7 +22,7 @@ Trained models are saved in the `models_saved` folder.
 
 
 # 1. Preliminary evaluation
-report the following table without doing any cleaning on the data. Do hyper-parameter optimization to find the best solution. Your code should justify your results.
+In the preliminary evaluation we tested four different models: Logistic Regression, KNeighborsClassifier, DecisionTreeClassifier, and RandomForestClassifier. We also tested a tuned version of the KNeighborsClassifier. The results of the evaluation are shown in the following table:
 
 | Model      | LogisticRegression | KNeighborsClassifier  | DecisionTreeClassifier | RandomForestClassifier | Tuned KNeighborsClassifier |
 |------------|--------------------|-----------------------|------------------------|------------------------|---------------------------|
@@ -32,11 +32,7 @@ report the following table without doing any cleaning on the data. Do hyper-para
 | Accuracy   | 0.43               | 0.29                  | 0.31                   | 0.40                   |    0.37     |
   
 
-Answer the following questions
-- Which is the best model?
-- Show the confusion matrix.
-- Show examples of some erroneous predictions. Can you understand where the error is coming from?
-- Do some more analysis to better understand how your model behaves.
+
 
 
 In the next sections we will describe the models that we trained (Flaubert, CamemBERT, Neural Network) and the ensemble model that we built combining them.
