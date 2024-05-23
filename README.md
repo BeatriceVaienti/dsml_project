@@ -32,7 +32,8 @@ As part of our preliminary evaluation, the following table reports the metrics o
 | Accuracy   | 0.43               | 0.29                  | 0.31                   | 0.40                   |    0.37     |
   
 
-s
+The confusion matrix for each model can be found in the Jupyter Notebook `notebooks/preliminaryEv_Comparison.ipynb`.
+
 In the next sections we will describe the models that we trained (Flaubert, CamemBERT, Neural Network) and the ensemble models that we built to combine them. 
 
 # 2. Flaubert / CamemBERT Model Training and Evaluation
