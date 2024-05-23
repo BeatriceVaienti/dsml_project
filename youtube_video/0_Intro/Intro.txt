@@ -1,0 +1,4 @@
+Text appears in the video:
+Welcome to our project presentation! (avatars of Bea and Chiara appear)
+
+In this video, the app creators Chiara Berretta (Berre avatar moves) and Beatrice Vaienti (Vaient avatar moves) will explain you our innovative machine-learning approach to predict the CEFR language difficulty of French sentences from A1 to C2.
