@@ -242,7 +242,6 @@ The folder containing all the necessary models and data for the ensemble model i
 - `camembert/`, `flaubert/`, and `simple_nn/` folders contain the trained models for the CamemBERT, Flaubert, and Neural Network models, respectively. The models were trained exclusively on the train_data, ensuring no data leakage for the next step of training of the ensemble model. Given the size of the trained CamemBERT and Flaubert models, we decided to not include them in the repository.
 - `meta_nn/` contains the trained model for the Neural Network used in the ensemble model.
 - `meta_gb/` contains the trained model for the LightGBM model used in the ensemble model. 
-- `predictions/` contains the predictions made by the single models on the test set.
 
 ## 5.2 `train_ensemble.py`: Training the Ensemble Model
 
@@ -314,7 +313,7 @@ To make predictions on the test set using the ensemble model, run:
 ```bash
 python scripts/predict_ensemble.py --meta_model [lgb|nn]
 ```
-NB: in the script, remember to update the latest hidden size used in the neural networks.
+NB: When using the script, remember to update the latest hidden size used in the neural networks.
 
 
 
