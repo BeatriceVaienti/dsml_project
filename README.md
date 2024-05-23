@@ -115,7 +115,7 @@ In the following table, we summarize the best validation accuracy achieved for e
 #### Confusion Matrices
 The confusion matrices for the CamemBERT and Flaubert models obtained for the best hyperparameters are shown below, along with their accuracy, precision, recall, and F1-score.
 ![CamemBERT Confusion Matrix](images/camembert_matrix.png)
-![Flaubert Confusion Matrix](path_to_flaubert_confusion_matrix.png)
+![Flaubert Confusion Matrix](images/flaubert_matrix.png)
 
 
 From the two confusion matrices we can notice that the most difficult class to predict is the C2 class, which in many cases is wrongly predicted as other classes, mainly C1. 
@@ -163,7 +163,9 @@ The hyperparameters tested are:
 
 First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
 
+### Evaluation Results
 
+![NN Confusion Matrix](images/nn_matrix.png)
 
 # 5. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
@@ -172,7 +174,10 @@ To obtain an overall better model we decided to build an ensemble model combinin
 If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 4.
 
 ## 5.1 `ensemble_model`:Folder Structure
-The folder contains 
+The folder is structured in the following way:
+- `train/train_data.csv` contains the training data for the single models, obtained with a train-test split of the full labelled dataset using a 80-20 ratio and a random seed of 42.
+- `test/test_data.csv` contains the test data on which the ensemble model will be trained on.
+- `camembert/`, `flaubert/`, and `simple_nn` folders contain the trained models for the CamemBERT and Flaubert models, respectively.
 
 
 ## Combination Techniques: Neural Network and lightGBM
