@@ -1,16 +1,16 @@
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+import os
+
+# Install Rust
+os.system("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y")
+
+# Add Rust to PATH
+os.system("source $HOME/.cargo/env")
+
 import streamlit as st
 import openai
 import torch
 from transformers import AutoTokenizer, CamembertForSequenceClassification
 from sentence_transformers import SentenceTransformer, util
-import pycountry
-import os
-import requests
-from zipfile import ZipFile
-from io import BytesIO
-
-os.system(“curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y”)
 
 # Function to check and download the model files
 def download_and_unzip(url, extract_to='model_directory'):
