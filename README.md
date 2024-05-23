@@ -152,6 +152,7 @@ The functions used to augment the data can be found in the `utils/data_augmentat
 Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
 
 while the ones for generating the embeddings are in the `utils/embeddings_generation.py` file.
+In Section 
 ## 4.3 Determining the Best Hyperparameters for the Neural Network
 We performed a grid search with a k-fold cross-validation to determine the best hyperparameters for the neural network. To run the code for the evaluation, use:
 
@@ -167,6 +168,8 @@ The hyperparameters tested are:
 
 First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
 
+###
+
 ### 4.3.1 POS tags impact on the accuracy
 Regarding the POS tags, we evaluated the impact on the accuracy of:
 - not using any POS tags;
@@ -178,7 +181,7 @@ In the following plot we show the impact of the POS tags on the accuracy of the 
 
 ![Best Pos number](images/pos_evaluation.png)
 
-The plot shows that the best mean accuracy is obtained when using the 5 most frequent POS tags: the reason probably lies in the fact that the infrequent POS tags are not very informative and can introduce noise in the model. As a consequence, we decided to use the 5 most frequent POS tags for the subsequent experiments.
+The plot shows that the best mean accuracy is obtained when using the __5 most frequent POS tags__: the reason probably lies in the fact that the infrequent POS tags are not very informative and can introduce noise in the model. As a consequence, we decided to use the 5 most frequent POS tags for the subsequent experiments.
 ### Evaluation Results
 
 ![NN Confusion Matrix](images/nn_matrix.png)
@@ -246,7 +249,13 @@ comment on the fact that one limitation consists in the fact that we are not act
 
 
 # Streamlit App
-We created a Streamlit app to visualize the predictions of the models. The app is thought to match people with the right level of French language proficiency. The user can input a sentence in French and the app will predict the CEFR level of the sentence. The app can be run with the following command:
+We created a Streamlit app to visualize the predictions of the models. The app is thought to match people with the right level of French language proficiency. The user can input a sentence in French and the app will predict the CEFR level of the sentence. 
+
+Normally in a tandem app you would choose yourself the level of the language proficiency you are looking for, but in this case we decided to predict it automatically, so that the matching is more accurate.
+
+We tested our idea with the PSI tandem group, to explore how this kind of app could be useful for university students and researchers.
+
+
 
 
 # Conclusion
