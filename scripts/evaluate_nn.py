@@ -36,7 +36,7 @@ def k_fold_cross_validation(df, scaler, device, hyperparameters, embedding_size,
         train_dataloader = prepare_nn_data(train_df, scaler, batch_size=hyperparameters['batch_size'])
         val_dataloader = prepare_nn_data(val_df, scaler, batch_size=hyperparameters['batch_size'])
 
-        model = SimpleNN(input_size=7 + embedding_size, hidden_size=hyperparameters['hidden_size'], num_classes=6).to(device)
+        model = SimpleNN(input_size=2 + embedding_size, hidden_size=hyperparameters['hidden_size'], num_classes=6).to(device)
         optimizer = torch.optim.AdamW(model.parameters(), lr=hyperparameters['learning_rate'])
 
         train_nn(model, train_dataloader, optimizer, device, epochs=hyperparameters['epochs'])
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # Initialize the scaler and fit on the entire dataset
     scaler = StandardScaler()
-    feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
+    feature_columns = ['n_words', 'avg_word_length']
     scaler.fit(df[feature_columns].values)
 
     # Apply scaling

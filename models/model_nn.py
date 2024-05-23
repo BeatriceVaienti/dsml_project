@@ -52,14 +52,13 @@ def evaluate_nn(model, dataloader, device):
 
 def prepare_nn_data(df, scaler, batch_size=32, shuffle=True, device='cpu'):
     labels = get_encoded_y(df).tolist()
-    feature_columns = ['n_words', 'avg_word_length', 'tag_0', 'tag_1', 'tag_2', 'tag_3', 'tag_4']
+    feature_columns = ['n_words', 'avg_word_length']
     features = df[feature_columns].values
     features = scaler.transform(features)
     
-    embeddings_camembert = np.vstack(df['embeddings_camembert'].values)
-    embeddings_flaubert= np.vstack(df['embeddings_flaubert'].values)
+    embeddings= np.vstack(df['embeddings'].values)
     # Combine features and embeddings
-    combined_features = np.hstack((features, embeddings_camembert, embeddings_flaubert))
+    combined_features = np.hstack((features, embeddings))
     
     combined_features = torch.tensor(combined_features, dtype=torch.float32).to(device)
     labels = torch.tensor(labels).to(device)
@@ -68,3 +67,4 @@ def prepare_nn_data(df, scaler, batch_size=32, shuffle=True, device='cpu'):
     sampler = SequentialSampler(data) if not shuffle else RandomSampler(data)
     dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size, pin_memory=False)
     return dataloader
+

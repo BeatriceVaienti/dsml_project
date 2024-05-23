@@ -23,6 +23,7 @@ from models.model_nn import SimpleNN
 from models.model_meta_nn import MetaNN, create_nn_dataloader, train_meta_nn, evaluate_meta_nn
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 import os
 import pandas as pd
@@ -181,6 +182,22 @@ def evaluate_model(model, dataloader, device, use_features=False):
     return np.array(predictions), np.array(true_labels)
 
 
+def compute_metrics(predictions, true_labels):
+    preds_flat = np.argmax(predictions, axis=1).flatten()
+    labels_flat = true_labels.flatten()
+    accuracy = accuracy_score(labels_flat, preds_flat)
+    precision = precision_score(labels_flat, preds_flat, average='weighted')
+    recall = recall_score(labels_flat, preds_flat, average='weighted')
+    f1 = f1_score(labels_flat, preds_flat, average='weighted')
+    conf_matrix = confusion_matrix(labels_flat, preds_flat)
+    return accuracy, precision, recall, f1, conf_matrix
+
+def save_metrics(metrics, filepath):
+    with open(filepath, 'w') as f:
+        for key, value in metrics.items():
+            f.write(f"{key}: {value}\n")
+        f.write(f"Confusion Matrix:\n{metrics['conf_matrix']}\n")
+
 if __name__ == "__main__":
     args = get_arguments()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
@@ -281,7 +298,8 @@ if __name__ == "__main__":
         print('Saving tokenizer camembert...')
         camembert_tokenizer.save_pretrained(f'./ensemble_model/full/camembert_full')
     
-    # Train SimpleNN   
+    # Train SimpleNN
+            
     nn_hyperparameters = {
             "learning_rate": 0.0001,
             "hidden_size": 64,
@@ -315,23 +333,55 @@ if __name__ == "__main__":
         nn_model = SimpleNN(input_size=7 + embedding_size, hidden_size = nn_hyperparameters['hidden_size'], num_classes=6).to(device)
         nn_model.load_state_dict(torch.load(nn_model_path))
 
+    print('Evaluating Camembert model...')
     camembert_predictions, true_labels = evaluate_model(camembert_model, camembert_eval_dataloader, device, use_features=args.use_nn)
+    camembert_metrics = compute_metrics(camembert_predictions, true_labels)
+    camembert_metrics_dict = {
+        'accuracy': camembert_metrics[0],
+        'precision': camembert_metrics[1],
+        'recall': camembert_metrics[2],
+        'f1': camembert_metrics[3],
+        'conf_matrix': camembert_metrics[4]
+    }
+    save_metrics(camembert_metrics_dict, 'models/camembert_metrics.txt')
+    
+    print('Evaluating Flaubert model...')
     flaubert_predictions, true_labels = evaluate_model(flaubert_model, flaubert_eval_dataloader, device, use_features=args.use_nn)
+    flaubert_metrics = compute_metrics(flaubert_predictions, true_labels)
+    flaubert_metrics_dict = {
+        'accuracy': flaubert_metrics[0],
+        'precision': flaubert_metrics[1],
+        'recall': flaubert_metrics[2],
+        'f1': flaubert_metrics[3],
+        'conf_matrix': flaubert_metrics[4]
+    }
+    save_metrics(flaubert_metrics_dict, 'models/flaubert_metrics.txt')
+
     camembert_accuracy = accuracy_score(true_labels, np.argmax(camembert_predictions, axis=1))
     flaubert_accuracy = accuracy_score(true_labels, np.argmax(flaubert_predictions, axis=1))
     print(f"Camembert Model Accuracy: {camembert_accuracy}")
     print(f"Flaubert Model Accuracy: {flaubert_accuracy}")
 
     if args.use_nn:
+        print('Evaluating simple NN model...')
         nn_eval_dataloader = prepare_nn_data_with_embeddings(test_df_augmented, scaler, batch_size=32, shuffle=False, device=device)
         nn_predictions, true_labels = evaluate_nn(nn_model, nn_eval_dataloader, device)
-        nn_predictions, true_labels = evaluate_nn(nn_model, nn_eval_dataloader, device)
-        nn_accuracy = accuracy_score(true_labels, nn_predictions)
+        
+        nn_metrics = compute_metrics(nn_predictions, true_labels)
+        nn_metrics_dict = {
+            'accuracy': nn_metrics[0],
+            'precision': nn_metrics[1],
+            'recall': nn_metrics[2],
+            'f1': nn_metrics[3],
+            'conf_matrix': nn_metrics[4]
+        }
+        save_metrics(nn_metrics_dict, 'models/nn_metrics.txt')
+        nn_accuracy = accuracy_score(true_labels, np.argmax(nn_predictions, axis=1))
         print(f"SimpleNN Model Accuracy: {nn_accuracy}")
         train_features = np.hstack([
             np.argmax(camembert_predictions, axis=1).reshape(-1, 1),
             np.argmax(flaubert_predictions, axis=1).reshape(-1, 1),
-            np.array(nn_predictions).reshape(-1, 1)
+            np.argmax(nn_predictions, axis=1).reshape(-1, 1)
         ])
     else:
         train_features = np.hstack([
