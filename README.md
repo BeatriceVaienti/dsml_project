@@ -143,6 +143,8 @@ To augment the data, we extracted the following attributes from the text:
 - POS tags
 The functions used to augment the data can be found in the `utils/data_augmentation.py` file, and an interactive generation of the augmented data can be done in the jupyter notebook at `notebooks/data_augmentation`
 
+Regarding POS tags, we decided to only employ the firs 5 POS tags and record the frequency (todo: check and add plot that shows which one performs better)
+
 ## 4.2 Embeddings
 Embeddings for the sentences are generated using the selected transformer model (CamemBERT in this case). These embeddings, combined with the additional features, are used as input for model training.
 
@@ -159,17 +161,18 @@ The hyperparameters tested are:
 - batch_sizes = [16, 32, 64, 128]
 - epochs = [32, 64]
 
-First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT.
+First of all we compared, with the grid search, which model for the generation of the embeddings between CamemBERT and FlauBert would perform better. The best mean accuracy that can be obtained for CamemBERT is equal to 0.5385 while the one for Flaubert is 0.4635. As such, we decided to employ CamemBERT (`camembert-base`) to tokenize the test and generate the embeddings.
+
+
 
 # 5. Ensemble Model
 To obtain an overall better model we decided to build an ensemble model combining the CamemmBERT and Flaubert models with a Neural Network. The neural network was trained on the embeddings of the sentences and attributes derived from the text, in particular the number of words, the average length of the words, the POS tags. In the following section we will describe the data augmentation that was performed to create the training set for the neural network and the simple architecture of the neural network.
 
 
+If specified using the flag `--use_nn`, the additional neural network (the one presented in Section 4) is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 4.
 
-
-## Neural Network 
-If specified using the flag `--use_nn`, an additional neural network is trained on the combined features and embeddings. This neural network is configured with the best hyperparameters (learning rate, hidden layer size, and number of epochs) found in Section 3.
-
+## 5.1 `ensemble_model`:Folder Structure
+The folder contains 
 
 
 ## Combination Techniques: Neural Network and lightGBM
@@ -181,12 +184,17 @@ To combine the CamemBERT, Flaubert, and Neural Network models, we tested two dif
 Best MetaNN parameters found: {'learning_rate': 0.01, 'hidden_size': 128, 'epochs': 50}
 Selecting MetaNN as the final model with accuracy: 0.6322916666666667
 
-## Ensemble Model Training
+## `train_ensemble.py`: Ensemble Model Training
 To train the ensemble model, run:
 ```bash
 python scripts/train_ensemble.py --use_nn
 ```
 Use the flag `--use_nn` to include the neural network in the ensemble model. The trained model will be saved in the `ensemble_model` folder.
+
+In the following subsection we will describe the process that is followed to train the ensemble model.
+
+### A. Training the Single Models
+The first step consists in training the single models that will be later combined. However, since the ensemble models will be trained on their predictions, we need to train them on a portion of the full labelled dataset, thus, we split it into train and test set. The train set will be used to train the single models one by one. Then, they will be used to predict the labels on the test set. These predictions will be used to train the ensemble model of the chosen type.
 
 ### predict_ensemble.py: Prediction
 To make predictions on the test set using the ensemble model, run:
@@ -199,7 +207,7 @@ NB: in the script, remember to update the latest hidden size used in the neural 
 
 Based on the chosen meta model type, the script will load the corresponding trained model and make predictions on the test set. The results will be saved in the `kaggle_submissions` folder.
 
-# Accuracies obtained for the Kaggle competition
+# Best Model Combination and Accuracies Obtained for the Kaggle competition
 
 | Model      | Accuracy | 
 |------------|----------|
