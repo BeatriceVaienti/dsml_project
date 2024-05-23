@@ -260,7 +260,7 @@ To combine the CamemBERT, Flaubert, and Neural Network models, we tested two dif
 1. LightGBM: We used the predictions of the CamemBERT model, Flaubert model, and Neural Network as features for a LightGBM model. LightGBM is a gradient boosting framework that uses tree-based learning algorithms. We performed hyperparameter tuning to find the best parameters for the LightGBM model.
 2. Neural Network: We used the predictions of the CamemBERT model, Flaubert model, and LightGBM model as features for a Neural Network model. We performed hyperparameter tuning to find the best parameters for the Neural Network model.
 
-### 5.3.1 LightGBM
+### 5.3.1 LightGBM (MetaGB)
 After loading the predictions of the CamemBERT, Flaubert, and Neural Network models, we performed a grid search to find the best hyperparameters for the LightGBM model. The tested hyperparameters are:
 - learning_rate: [0.01, 0.1, 0.2]
 - num_leaves: [31, 50, 100]
@@ -268,7 +268,7 @@ After loading the predictions of the CamemBERT, Flaubert, and Neural Network mod
 - n_estimators: [50, 100, 200]
 
 
-### 5.3.2 Neural Network
+### 5.3.2 Neural Network (MetaNN)
 
 After evaluating both meta models with a grid search, we found that the Neural Network model outperformed the LightGBM model. The best hyperparameters for the Neural Network model are:
 - learning_rate: 0.01
@@ -280,7 +280,7 @@ Selecting MetaNN as the final model with accuracy: 0.6416666666666667
 
 
 
-## `train_ensemble.py`: Ensemble Model Training
+## 5.4 `train_ensemble.py`: Ensemble Model Training
 To train the ensemble model, run:
 ```bash
 python scripts/train_ensemble.py --use_nn
@@ -289,8 +289,19 @@ Use the flag `--use_nn` to include the neural network in the ensemble model. The
 
 In the following subsection we will describe the process that is followed to train the ensemble model.
 
-### A. Training the Single Models
+### 5.4.1 Training the Single Models
 The first step consists in training the single models that will be later combined. However, since the ensemble models will be trained on their predictions, we need to train them on a portion of the full labelled dataset, thus, we split it into train and test set. The train set will be used to train the single models one by one. Then, they will be used to predict the labels on the test set. These predictions will be used to train the ensemble model of the chosen type.
+
+### 5.4.2 Training the Ensemble Models
+The next step involves training the meta models. Depending on the `--use_nn` flag, we trained either a LightGBM model or a Neural Network model on the predictions of the single models.
+
+These are the steps followed in both cases:
+- Load the predictions of the single models on the test set.
+- Perform hyperparameter tuning using grid search to find the best parameters for the meta model (using the hyperparameters described in Section 5.3).
+- Train the meta model on the predictions of the single models with the best hyperparameters found.
+- Save the trained meta model in the `ensemble_model` folder, respectively in the subfolders `meta_nn` and `meta_gb`.
+
+
 
 ### predict_ensemble.py: Prediction
 To make predictions on the test set using the ensemble model, run:
