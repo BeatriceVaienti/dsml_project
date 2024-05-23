@@ -1,9 +1,0 @@
-Problema coerenza domanda (Risolto)
-Bloccare codice se livello C2 e' raggiunto o superato (Risolto)
-Introdurre domanda se native speaker (Risolto)
-Rimuovere press enter to continue (Ignore: it needs a workaround and the "Press enter to apply" message does not impact the functionality)
-Fare il check della lingua francese e della presenza di piu' di una parola nella frase (Risolto con il similarity check)
-
-Caricare nuovo modello
-Se il test e' finito, fare un rerun per caricare una nuova pagina con il topic della conversazione
-Associare un testo/esercizio al topic
